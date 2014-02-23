@@ -25,3 +25,9 @@ class BasePlugin(object):
         Put upgrade actions here.
         """
         pass
+
+    def destroy(self):
+        pass
+
+    def save_forms(self, metric, **kwargs):
+        pass

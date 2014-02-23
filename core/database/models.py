@@ -48,10 +48,10 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(STRING_MAX), unique=True)
     password = db.Column(db.String(STRING_MAX))
     active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
+    confirmed_at = db.Column(db.DateTime(timezone=True))
 
-    created = db.Column(db.Date, default=datetime.now)
-    updated = db.Column(db.Date, onupdate=datetime.now)
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
 
     plugins = db.relationship('Plugin', secondary=user_plugins, backref='users')
     metrics = db.relationship('Metric', secondary=user_metrics, backref='users')
@@ -61,69 +61,102 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return "<User(name='%s', lastname='%s', password='%s')>" % (self.username, self.last_name, self.password)
 
-class Plugin(db.Model):
-    __tablename__ = 'plugins'
-    __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name'), )
+class UserItem(db.Model):
+    __tablename__ = 'useritem'
 
     id = db.Column(db.Integer, primary_key=True)
+    version = db.Column(db.Integer)
+    type = db.Column(db.String(50))
+
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    __mapper_args__ = {
+        'polymorphic_identity':'useritem',
+        'polymorphic_on':type
+    }
+
+    def __repr__(self):
+        return "<UserItem(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
+
+
+class Plugin(UserItem):
+    __tablename__ = 'plugins'
+    __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name'), )
+    __mapper_args__ = {
+        'polymorphic_identity':'plugins',
+        }
+
+    id = db.Column(db.Integer, db.ForeignKey('useritem.id'), primary_key=True)
     name = db.Column(db.String(STRING_MAX))
     hashkey = db.Column(db.String(STRING_MAX))
-    version = db.Column(db.Integer)
-
-    created = db.Column(db.Date, default=datetime.now)
-    updated = db.Column(db.Date, onupdate=datetime.now)
 
     def __repr__(self):
         return "<Plugin(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
-class Metric(db.Model):
+class Metric(UserItem):
     __tablename__ = 'metrics'
     __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name'), )
+    __mapper_args__ = {
+        'polymorphic_identity':'metrics',
+        }
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('useritem.id'), primary_key=True)
     name = db.Column(db.String(STRING_MAX))
     hashkey = db.Column(db.String(STRING_MAX))
-    version = db.Column(db.Integer)
-
-    created = db.Column(db.Date, default=datetime.now)
-    updated = db.Column(db.Date, onupdate=datetime.now)
 
     def __repr__(self):
         return "<Metric(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
-class Source(db.Model):
+class Source(UserItem):
     __tablename__ = 'sources'
     __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name'), )
+    __mapper_args__ = {
+        'polymorphic_identity':'sources',
+        }
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey('useritem.id'), primary_key=True)
     name = db.Column(db.String(STRING_MAX))
     hashkey = db.Column(db.String(STRING_MAX))
-    version = db.Column(db.Integer)
-
-    created = db.Column(db.Date, default=datetime.now)
-    updated = db.Column(db.Date, onupdate=datetime.now)
 
     def __repr__(self):
         return "<Source(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
-class TimePoint(db.Model):
-    __tablename__ = 'timepoints'
+class Data(db.Model):
+    __tablename__ = 'data'
     __table_args__ = (db.Index('unique_hash_time', "plugin_id", "metric_id", "user_id", "hashkey"), db.UniqueConstraint('hashkey'), )
 
-    hash_vals = ["plugin_id", "metric_id", "user_id", "data"]
+    hash_vals = ["plugin_id", "metric_id", "user_id", "data", "date"]
 
     id = db.Column(db.Integer, primary_key=True)
     plugin_id = db.Column(db.String(STRING_MAX), db.ForeignKey('plugins.hashkey'))
     metric_id = db.Column(db.String(STRING_MAX), db.ForeignKey('metrics.name'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     source_id = db.Column(db.String(STRING_MAX), db.ForeignKey("sources.name"))
-    date = db.Column(db.Date)
+    date = db.Column(db.DateTime(timezone=True))
+    type = db.Column(db.String(50))
 
-    data = db.Column(db.Float)
     hashkey = db.Column(db.String(STRING_MAX))
 
-    created = db.Column(db.Date, default=datetime.now)
-    modified = db.Column(db.Date, onupdate=datetime.now)
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    modified = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    __mapper_args__ = {
+        'polymorphic_identity':'data',
+        'polymorphic_on':type
+    }
+
+    def __repr__(self):
+        return "<Data(plugin='%s', metric='%s')>" % (self.plugin_id, self.metric_id)
+
+class TimePoint(Data):
+    __tablename__ = 'timepoints'
+    __mapper_args__ = {
+        'polymorphic_identity':'timepoints',
+        }
+
+    id = db.Column(db.Integer, db.ForeignKey('data.id'), primary_key=True)
+    data = db.Column(db.String(STRING_MAX))
 
     user = db.relationship("User", backref=db.backref('timepoints', order_by=id))
     plugin = db.relationship("Plugin", backref=db.backref('timepoints', order_by=id))
@@ -131,7 +164,24 @@ class TimePoint(db.Model):
     source = db.relationship("Source", backref=db.backref('timepoints', order_by=id))
 
     def __repr__(self):
-        return "<TimeSeries(plugin='%s', metric='%s', data='%s')>" % (self.plugin_id, self.metric_id, self.data)
+        return "<TimePoints(plugin='%s', metric='%s', data='%s')>" % (self.plugin_id, self.metric_id, self.data)
+
+class Blob(Data):
+    __tablename__ = 'blobs'
+    __mapper_args__ = {
+        'polymorphic_identity':'blobs',
+        }
+
+    id = db.Column(db.Integer, db.ForeignKey('data.id'), primary_key=True)
+    data = db.Column(db.Text)
+
+    user = db.relationship("User", backref=db.backref('blobs', order_by=id))
+    plugin = db.relationship("Plugin", backref=db.backref('blobs', order_by=id))
+    metric = db.relationship("Metric", backref=db.backref('blobs', order_by=id))
+    source = db.relationship("Source", backref=db.backref('blobs', order_by=id))
+
+    def __repr__(self):
+        return "<Blobs(plugin='%s', metric='%s', data='%s')>" % (self.plugin_id, self.metric_id, self.data)
 
 # Create hashkeys to make items unique
 
@@ -152,27 +202,4 @@ def add_hashkey(mapper, connection, target):
 
 # Register hashkey adding events.
 event.listen(TimePoint, "before_insert", add_hashkey)
-
-
-"""
-#Comment this out for now to avoid having to change both models.
-class Blob(Base):
-    __tablename__ = 'blob'
-    __table_args__ = (Index('unique_hash_blob', "name", "user_id", "hashkey"), )
-
-    hash_vals = ["plugin_id", "data", "user_id"]
-
-    id = Column(Integer, primary_key=True)
-    plugin_id = Column(String, ForeignKey('plugin.hashkey'))
-    hashkey = Column(String)
-    data = Column(Text)
-    user_id = Column(Integer, ForeignKey('user.id'))
-
-    user = relationship("User", backref=backref('blobs', order_by=id))
-    plugin = relationship("Plugin", backref=backref('blobs', order_by=id))
-
-    def __repr__(self):
-        return "<Blob(plugin='%s', metric='%s', data='%s')>" % (self.plugin_id, self.metric, self.data)
-
-event.listen(Blob, 'before_insert', add_hashkey)
-"""
+event.listen(Blob, "before_insert", add_hashkey)

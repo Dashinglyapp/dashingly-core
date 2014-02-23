@@ -1,0 +1,14 @@
+<form role="form" method="POST" action="{{ url_for('main_views.forms') }}">
+    {{ form.csrf_token }}
+    <input type="hidden" name="plugin" value="{{ form.plugin_proxy.hashkey }}">
+    <input type="hidden" name="metric" value="{{ form.metric_proxy.name }}">
+    {% for field in form.display_fields %}
+        {% set f = form[field] %}
+        <div class="form-group">
+            {{ f.label }}
+            {{ f(size=20) }}
+            <p class="help-block">{{ f.description }}</p>
+        </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-default">Submit</button>
+</form>

@@ -15,6 +15,7 @@ def get_cls(session, cls, obj, attrs=None, create=False):
         for attr in attrs:
             setattr(val, attr, getattr(obj, attr))
         session.add(val)
+        session.commit()
     else:
         raise InvalidObjectException()
 

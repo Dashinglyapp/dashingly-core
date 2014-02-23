@@ -11,18 +11,22 @@ class PluginManager(object):
         from core.database.models import Plugin, db
         return db.session.query(Plugin).filter(Plugin.hashkey == plugin_hashkey).first()
 
-    def run_actions(self, plugin_hashkey, action_name):
+    def run_actions(self, plugin_hashkey, action_name, **kwargs):
         from core.plugins.loader import plugins
+        plugin_cls = plugins[plugin_hashkey]
+        context, wrapper = self.get_context_and_wrapper(plugin_hashkey)
+        plugin = plugin_cls(context, wrapper)
+        func = getattr(plugin, action_name)
+        return func(**kwargs)
+
+    def get_context_and_wrapper(self, plugin_hashkey):
         from core.database.models import db
         from core.database.wrapper import DBWrapper
         from core.plugins.models import ModelContext
-        plugin_cls = plugins[plugin_hashkey]
         plugin_obj = self.lookup_plugin(plugin_hashkey)
         context = ModelContext(user=self.user, plugin=plugin_obj)
         wrapper = DBWrapper(db.session, context)
-        plugin = plugin_cls(context, wrapper)
-        func = getattr(plugin, action_name)
-        func()
+        return context, wrapper
 
     def add(self, plugin_hashkey):
         from core.database.models import db
@@ -34,7 +38,6 @@ class PluginManager(object):
         if plugin not in self.user.plugins:
             self.user.plugins.append(plugin)
 
-        self.run_actions(plugin_hashkey, "setup")
         if plugin_cls.models is not None:
             for m in plugin_cls.models:
                 metric = get_cls(db.session, Metric, m.metric_proxy, create=True)
@@ -43,6 +46,7 @@ class PluginManager(object):
                     self.user.metrics.append(metric)
                 if source not in self.user.sources:
                     self.user.sources.append(source)
+        self.run_actions(plugin_hashkey, "setup")
         db.session.commit()
 
     def remove(self, plugin_hashkey):
@@ -65,3 +69,7 @@ class PluginManager(object):
                 if source in self.user.sources:
                     self.user.sources.remove(source)
         db.session.commit()
+
+    def save_form(self, plugin_hashkey, metric_name, **kwargs):
+        from proxies import MetricProxy
+        return self.run_actions(plugin_hashkey, "save_forms", metric=MetricProxy(name=metric_name), **kwargs)

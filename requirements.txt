@@ -8,3 +8,5 @@ Flask-SQLAlchemy==1.0
 Flask-Security==1.7.1
 py-bcrypt==0.4
 pudb==2013.5.1
+Flask-Babel==0.9
+Flask-WTF==0.9.4

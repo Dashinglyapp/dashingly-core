@@ -2,6 +2,7 @@ from flask import Flask
 from core.web.main_views import main_views
 from core.web.plugin_views import plugin_views
 from flask.ext.security import Security, SQLAlchemyUserDatastore
+from flask.ext.babel import Babel
 import settings
 
 app = Flask(__name__, template_folder='templates')
@@ -9,6 +10,8 @@ app.register_blueprint(main_views)
 app.register_blueprint(plugin_views)
 
 app.config.from_object('settings')
+
+babel = Babel(app)
 
 if __name__ == '__main__':
     from core.database.models import db, User, Role
