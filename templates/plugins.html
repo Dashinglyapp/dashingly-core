@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <h3>Available Plugins</h3>
+    {% for p in available_plugins %}
+        {% set key = available_plugins[p].hashkey %}
+        <div class="panel {% if key in installed_plugins %}panel-primary{% else %}panel-info{% endif %}">
+            <div class="panel-heading">
+                <h3 class="panel-title">{{ available_plugins[p].name }}</h3>
+            </div>
+            <div class="panel-body">
+                {{ available_plugins[p].description }}
+            </div>
+            <div class="panel-footer">
+                <div class="btn-group">
+                    {% if key in installed_plugins %}
+                        <a href="{{ url_for('plugin_views.remove', plugin_hashkey=key) }}" class="btn btn-default">Remove</a>
+                        <a href="{{ url_for('plugin_views.configure', plugin_hashkey=key) }}" class="btn btn-default">Configure</a>
+                    {% else %}
+                        <a href="{{ url_for('plugin_views.add', plugin_hashkey=key) }}" class="btn btn-default">Add</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

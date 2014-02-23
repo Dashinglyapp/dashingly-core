@@ -1,0 +1,12 @@
+python-pip
+nginx
+git
+redis-server
+curl
+libfreetype6
+libfreetype6-dev
+zlib1g-dev
+openssl
+memcached
+python-dev
+libssl-dev

@@ -1,0 +1,10 @@
+SQLAlchemy==0.9.3
+path.py==5.1
+ipython==1.2.0
+alembic==0.6.3
+DateTime==4.0.1
+Flask==0.10.1
+Flask-SQLAlchemy==1.0
+Flask-Security==1.7.1
+py-bcrypt==0.4
+pudb==2013.5.1
