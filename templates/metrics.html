@@ -7,20 +7,27 @@
 {% block js %}
     <script src="{{ url_for('static', filename='vendor/d3/d3.min.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/nv/nv.d3.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charting.js') }}" type="text/javascript"></script>
 {% endblock %}
 
 {% block content %}
 
 <h3>Your Metrics</h3>
     {% for m in installed_metrics %}
-        <div class="panel panel-default">
+        {% set metric = installed_metrics[m]['metric'] %}
+        {% set x = installed_metrics[m]['x'] %}
+        {% set y = installed_metrics[m]['y'] %}
+
+        <div class="panel panel-default chart-panel">
+            <input type="hidden" data-x='{{ x|tojson|safe }}' data-y='{{ y|tojson|safe }}' class="chart-data">
             <div class="panel-heading">
-                <h3 class="panel-title">{{ m.name }}</h3>
+                <h3 class="panel-title">{{ metric.name }}</h3>
             </div>
             <div class="panel-body">
-                {{ m.description }}
-            </div>
-            <div class="panel-footer">
+                {{ metric.description }}
+                <div class="chart">
+                    <svg style="height: 300px"></svg>
+                </div>
             </div>
         </div>
     {% endfor %}

@@ -12,3 +12,4 @@ class DataModel(BlobBase):
 
     number = Field()
     text = Field()
+

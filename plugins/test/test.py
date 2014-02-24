@@ -1,7 +1,7 @@
 from core.plugins.base import BasePlugin
 from core.plugins.proxies import MetricProxy
 from models import MoodModel, DataModel
-from forms import SurveyForm
+from forms import SurveyForm, MoodForm
 from datetime import datetime
 import manifest
 
@@ -9,7 +9,7 @@ class TestPlugin(BasePlugin):
     name = manifest.NAME
     description = manifest.DESCRIPTION
     models = [MoodModel, DataModel]
-    forms = [SurveyForm]
+    forms = [SurveyForm, MoodForm]
     hashkey = manifest.HASHKEY
 
     def setup(self):
@@ -26,7 +26,13 @@ class TestPlugin(BasePlugin):
         pass
 
     def save_forms(self, metric, **kwargs):
-        form = SurveyForm(**kwargs)
-        if form.validate():
-            data = DataModel(date=datetime.utcnow(), text=form.text.data, number=form.number.data)
-            self.wrapper.add(data)
+        if SurveyForm.metric_proxy.name == metric.name:
+            form = SurveyForm(**kwargs)
+            if form.validate():
+                data = DataModel(date=datetime.utcnow(), text=form.text.data, number=form.number.data)
+                self.wrapper.add(data)
+        elif MoodForm.metric_proxy.name == metric.name:
+            form = MoodForm(**kwargs)
+            if form.validate():
+                data = MoodModel(date=datetime.utcnow(), data=form.number.data)
+                self.wrapper.add(data)

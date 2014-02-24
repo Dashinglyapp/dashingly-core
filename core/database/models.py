@@ -122,6 +122,27 @@ class Source(UserItem):
     def __repr__(self):
         return "<Source(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
+class PluginModel(db.Model):
+    __tablename__ = 'pluginmodels'
+    __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name'), )
+    hash_vals = ["plugin_id", "metric_id", "name"]
+
+    id = db.Column(db.Integer, primary_key=True)
+    version = db.Column(db.Integer)
+    name = db.Column(db.String(STRING_MAX))
+    hashkey = db.Column(db.String(STRING_MAX))
+    plugin_id = db.Column(db.String(STRING_MAX), db.ForeignKey('plugins.hashkey'))
+    metric_id = db.Column(db.String(STRING_MAX), db.ForeignKey('metrics.name'))
+
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    plugin = db.relationship("Plugin", backref=db.backref('pluginmodels', order_by=id))
+    metric = db.relationship("Metric", backref=db.backref('pluginmodels', order_by=id))
+
+    def __repr__(self):
+        return "<PluginModel(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
+
 class Data(db.Model):
     __tablename__ = 'data'
     __table_args__ = (db.Index('unique_hash_time', "plugin_id", "metric_id", "user_id", "hashkey"), db.UniqueConstraint('hashkey'), )
@@ -133,6 +154,7 @@ class Data(db.Model):
     metric_id = db.Column(db.String(STRING_MAX), db.ForeignKey('metrics.name'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     source_id = db.Column(db.String(STRING_MAX), db.ForeignKey("sources.name"))
+    plugin_model_id = db.Column(db.String(STRING_MAX), db.ForeignKey("pluginmodels.hashkey"))
     date = db.Column(db.DateTime(timezone=True))
     type = db.Column(db.String(50))
 
@@ -160,6 +182,7 @@ class TimePoint(Data):
 
     user = db.relationship("User", backref=db.backref('timepoints', order_by=id))
     plugin = db.relationship("Plugin", backref=db.backref('timepoints', order_by=id))
+    plugin_model = db.relationship("PluginModel", backref=db.backref('timepoints', order_by=id))
     metric = db.relationship("Metric", backref=db.backref('timepoints', order_by=id))
     source = db.relationship("Source", backref=db.backref('timepoints', order_by=id))
 
@@ -177,6 +200,7 @@ class Blob(Data):
 
     user = db.relationship("User", backref=db.backref('blobs', order_by=id))
     plugin = db.relationship("Plugin", backref=db.backref('blobs', order_by=id))
+    plugin_model = db.relationship("PluginModel", backref=db.backref('blobs', order_by=id))
     metric = db.relationship("Metric", backref=db.backref('blobs', order_by=id))
     source = db.relationship("Source", backref=db.backref('blobs', order_by=id))
 
@@ -203,3 +227,4 @@ def add_hashkey(mapper, connection, target):
 # Register hashkey adding events.
 event.listen(TimePoint, "before_insert", add_hashkey)
 event.listen(Blob, "before_insert", add_hashkey)
+event.listen(PluginModel, "before_insert", add_hashkey)

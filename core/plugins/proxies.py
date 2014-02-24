@@ -12,3 +12,9 @@ class PluginProxy(object):
     def __init__(self, name, hashkey):
         self.name = name
         self.hashkey = hashkey
+
+class PluginModelProxy(object):
+    def __init__(self, plugin_id, metric_id, name):
+        self.plugin_id = plugin_id
+        self.metric_id = metric_id
+        self.name = name

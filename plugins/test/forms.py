@@ -11,3 +11,12 @@ class SurveyForm(BaseForm):
 
     text = TextField(description="Enter the mood you are feeling.")
     number = IntegerField(description="Number on a 1-10 scale.")
+
+class MoodForm(BaseForm):
+    heading = "Please enter some information about your mood."
+    display_fields = ['number']
+    metric_proxy = MetricProxy(name="mood")
+    source_proxy = SourceProxy(name="self")
+    plugin_proxy = manifest.plugin_proxy
+
+    number = IntegerField(description="Number on a 1-10 scale.")

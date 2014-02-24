@@ -33,7 +33,7 @@ class ModelBase(object):
 
 class TimePointBase(ModelBase):
     model_cls = TimePoint
-    data = Field()
+    data = None
 
     def get_data(self):
         return self.data
@@ -51,6 +51,7 @@ class BlobBase(ModelBase):
             if isinstance(getattr(cls, f), Field):
                 fields.append(f)
         return fields
+
     def get_data(self):
         data = {}
         for f in self.get_fields():

@@ -26,7 +26,7 @@ def manage_plugins():
 @login_required
 def metrics():
     manager = MetricManager(current_user)
-    return render_template("metrics.html", installed_metrics=manager.list())
+    return render_template("metrics.html", installed_metrics=manager.list_with_values())
 
 class Forms(MethodView):
     decorators = [login_required]
