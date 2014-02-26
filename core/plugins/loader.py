@@ -1,10 +1,10 @@
 import importlib
 import os
 import sys
-from core.database.wrapper import DBWrapper
-from core.plugins.models import ModelContext
-from core.database.models import db
+from core.database.manager import DBManager
+from app import db
 from core.plugins.base import BasePlugin
+from core.manager import ExecutionContext
 
 class PluginLoader():
     def __init__(self, path):
@@ -23,14 +23,14 @@ class PluginLoader():
 
 def load_plugins():
     plugins = {}
-    import settings
-    context = ModelContext()
-    wrapper = DBWrapper(db.session, context)
+    from realize import settings
+    context = ExecutionContext()
+    manager = DBManager(context, session=db.session)
     for plugin in PluginLoader(settings.PLUGIN_PATH):
         # Store plugins in a dictionary for later access.
         plugins[plugin.hashkey] = plugin
         # Register all plugins and create a DB entry as needed.
-        wrapper.register_plugin(plugin)
+        manager.register_plugin(plugin)
     db.session.commit()
     return plugins
 

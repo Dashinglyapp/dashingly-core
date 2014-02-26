@@ -18,3 +18,7 @@ class PluginModelProxy(object):
         self.plugin_id = plugin_id
         self.metric_id = metric_id
         self.name = name
+
+class TaskProxy(object):
+    def __init__(self, name):
+        self.name = name

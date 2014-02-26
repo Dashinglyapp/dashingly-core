@@ -13,14 +13,14 @@ class TestPlugin(BasePlugin):
     hashkey = manifest.HASHKEY
 
     def setup(self):
-        moods = self.wrapper.query_time_filter(manifest.plugin_proxy, MetricProxy(name="mood"))
+        moods = self.manager.query_time_filter(manifest.plugin_proxy, MetricProxy(name="mood"))
         if len(moods) == 0:
             mood = MoodModel(data=1, date=datetime.utcnow())
-            self.wrapper.add(mood)
-        data = self.wrapper.query_blob_filter(manifest.plugin_proxy, MetricProxy(name="data"))
+            self.manager.add(mood)
+        data = self.manager.query_blob_filter(manifest.plugin_proxy, MetricProxy(name="data"))
         if len(data) == 0:
             data = DataModel(date=datetime.utcnow(), text="This is some text.", number=1)
-            self.wrapper.add(data)
+            self.manager.add(data)
 
     def destroy(self):
         pass
@@ -30,9 +30,9 @@ class TestPlugin(BasePlugin):
             form = SurveyForm(**kwargs)
             if form.validate():
                 data = DataModel(date=datetime.utcnow(), text=form.text.data, number=form.number.data)
-                self.wrapper.add(data)
+                self.manager.add(data)
         elif MoodForm.metric_proxy.name == metric.name:
             form = MoodForm(**kwargs)
             if form.validate():
                 data = MoodModel(date=datetime.utcnow(), data=form.number.data)
-                self.wrapper.add(data)
+                self.manager.add(data)

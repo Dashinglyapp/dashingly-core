@@ -2,17 +2,18 @@ from proxies import PluginProxy
 
 class BasePlugin(object):
     name = None
+    hashkey = None
 
-    def __init__(self, context, wrapper):
-        self.context = context
+    def __init__(self, context, manager):
 
-        self.user = context.user
+        self.user = manager.user
         self.plugin = context.plugin
         self.plugin_proxy = PluginProxy(
             name=context.plugin.name,
             hashkey=context.plugin.hashkey
         )
-        self.wrapper = wrapper
+        self.context = context
+        self.manager = manager
 
     def setup(self):
         """

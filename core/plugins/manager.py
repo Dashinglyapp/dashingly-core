@@ -1,35 +1,35 @@
 from core.util import get_cls
+from core.manager import BaseManager, ExecutionContext
 
-class PluginManager(object):
-    def __init__(self, user):
-        self.user = user
-
+class PluginManager(BaseManager):
     def list(self):
         return self.user.plugins
 
     def lookup_plugin(self, plugin_hashkey):
-        from core.database.models import Plugin, db
+        from core.database.models import Plugin
+        from app import db
         return db.session.query(Plugin).filter(Plugin.hashkey == plugin_hashkey).first()
 
     def run_actions(self, plugin_hashkey, action_name, **kwargs):
         from core.plugins.loader import plugins
         plugin_cls = plugins[plugin_hashkey]
-        context, wrapper = self.get_context_and_wrapper(plugin_hashkey)
-        plugin = plugin_cls(context, wrapper)
+        manager = self.get_manager(plugin_hashkey)
+        context = ExecutionContext(plugin=self.lookup_plugin(plugin_hashkey), user=self.user)
+        plugin = plugin_cls(context, manager)
         func = getattr(plugin, action_name)
         return func(**kwargs)
 
-    def get_context_and_wrapper(self, plugin_hashkey):
-        from core.database.models import db
-        from core.database.wrapper import DBWrapper
-        from core.plugins.models import ModelContext
-        plugin_obj = self.lookup_plugin(plugin_hashkey)
-        context = ModelContext(user=self.user, plugin=plugin_obj)
-        wrapper = DBWrapper(db.session, context)
-        return context, wrapper
+    def get_manager(self, plugin_hashkey):
+        from app import db
+        from core.database.manager import DBManager
+
+        plugin = self.lookup_plugin(plugin_hashkey)
+        context = ExecutionContext(user=self.user, plugin=plugin, group=self.group)
+        manager = DBManager(context, session=db.session)
+        return manager
 
     def add(self, plugin_hashkey):
-        from core.database.models import db
+        from app import db
         from core.plugins.loader import plugins
         from core.database.models import Metric, Source
 
@@ -50,7 +50,7 @@ class PluginManager(object):
         db.session.commit()
 
     def remove(self, plugin_hashkey):
-        from core.database.models import db
+        from app import db
         from core.plugins.loader import plugins
         from core.database.models import Metric, Source
 

@@ -1,16 +1,21 @@
 from models import Metric, Source, Plugin, TimePoint, Blob, PluginModel
 from core.plugins.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
 from core.util import InvalidObjectException, get_cls
+from core.database.permissions import PermissionsManager
+from core.manager import BaseManager
 
-class DBWrapper(object):
+class DBManager(BaseManager):
     id_vals = ["id", "hashkey"]
     modify_vals = ["date"]
     get_vals = ["created", "modified"]
     vals = id_vals + modify_vals + get_vals
 
-    def __init__(self, session, context):
+    def __init__(self, context, session=None):
+        super(DBManager, self).__init__(context)
         self.session = session
-        self.context = context
+
+        if self.plugin is not None:
+            self.perm_manager = PermissionsManager(self.context)
 
     def add(self, obj):
         data = obj.get_data()
@@ -22,10 +27,14 @@ class DBWrapper(object):
             'source': source,
             'metric': metric,
             'data': data,
-            'plugin': self.context.plugin,
-            'user': self.context.user,
+            'plugin': self.plugin,
             'plugin_model_id': obj.hashkey,
         }
+
+        if self.user is not None:
+            attribs['user'] = self.user
+        elif self.group is not None:
+            attribs['group'] = self.group
 
 
         mod = obj.model_cls(**attribs)
@@ -40,7 +49,7 @@ class DBWrapper(object):
         return obj
 
     def find_model(self, obj, **kwargs):
-        q = self.context.session.query(obj.model_cls)
+        q = self.session.query(obj.model_cls)
         for attr, value in kwargs.items():
             q = q.filter(getattr(obj.model_cls, attr) == value)
         if q.count() > 0:
@@ -53,20 +62,26 @@ class DBWrapper(object):
 
     def delete(self, obj):
         mod = self.find_model(obj, id=obj.id)
-        if mod.user == self.context.user:
+        if self.perm_manager.check_perms(mod, "delete"):
             self.session.delete(mod)
         return obj
 
     def update(self, obj):
         mod = self.find_model(obj, id=obj.id)
-        if mod.user == self.context.user:
+        if self.perm_manager.check_perms(mod, "update"):
             for v in self.modify_vals:
                 setattr(mod, v, getattr(obj, v))
             mod.data = obj.get_data()
         return obj
 
     def _query_base(self, plugin_proxy=None, metric_proxy=None, query_cls=TimePoint):
-        query = self.session.query(query_cls).filter(getattr(query_cls, "user") == self.context.user).order_by(query_cls.date.asc())
+        query = self.session.query(query_cls)
+        if self.user is not None:
+            query = query.filter(getattr(query_cls, "user") == self.user)
+        elif self.group is not None:
+            query = query.filter(getattr(query_cls, "group") == self.group)
+
+        query = query.order_by(query_cls.date.asc())
         if plugin_proxy is not None:
             plugin = get_cls(self.session, Plugin, plugin_proxy)
             query = query.filter(getattr(query_cls, "plugin") == plugin)
@@ -88,6 +103,10 @@ class DBWrapper(object):
         return None
 
     def translate_object(self, obj):
+        has_perm = self.perm_manager.check_perms(obj, "view")
+        if not has_perm:
+            return None
+
         tp = self.lookup_plugin_model(obj)()
         tp.metric_proxy = MetricProxy(name=obj.metric.name)
         tp.plugin_proxy = PluginProxy(name=obj.plugin.name, hashkey=obj.plugin.hashkey)
@@ -102,7 +121,9 @@ class DBWrapper(object):
     def translate_objects(self, query):
         tps = []
         for obj in query:
-            tps.append(self.translate_object(obj))
+            translation = self.translate_object(obj)
+            if translation is not None:
+                tps.append(translation)
         return tps
 
     def query_range(self, query_column, model_cls, plugin_proxy=None, metric_proxy=None, start=None, end=None):
@@ -151,3 +172,4 @@ class DBWrapper(object):
         val = get_cls(self.session, PluginModel, proxy, attrs=["name", "plugin_id", "metric_id"], create=True)
 
         model.hashkey = val.hashkey
+

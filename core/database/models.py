@@ -4,11 +4,9 @@ import logging
 from datetime import datetime
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.security import UserMixin, RoleMixin
-from app import app
-import settings
 
 log = logging.getLogger(__name__)
-db = SQLAlchemy(app)
+db = SQLAlchemy()
 
 STRING_MAX = 255
 
@@ -27,6 +25,11 @@ user_sources = db.Table('user_sources', db.Model.metadata,
                         db.Column('source_id', db.Integer, db.ForeignKey('sources.id'))
 )
 
+user_groups = db.Table('user_groups', db.Model.metadata,
+                        db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+                        db.Column('group_id', db.Integer, db.ForeignKey('groups.id'))
+)
+
 roles_users = db.Table('roles_users', db.Model.metadata,
                        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
                        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
@@ -41,6 +44,8 @@ class Role(db.Model, RoleMixin):
 
 class User(db.Model, UserMixin):
 
+    hash_vals = ["username", "email"]
+
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(STRING_MAX))
     last_name = db.Column(db.String(STRING_MAX))
@@ -49,6 +54,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(STRING_MAX))
     active = db.Column(db.Boolean())
     confirmed_at = db.Column(db.DateTime(timezone=True))
+    hashkey = db.Column(db.String(STRING_MAX), unique=True)
 
     created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
     updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
@@ -56,6 +62,7 @@ class User(db.Model, UserMixin):
     plugins = db.relationship('Plugin', secondary=user_plugins, backref='users')
     metrics = db.relationship('Metric', secondary=user_metrics, backref='users')
     sources = db.relationship('Source', secondary=user_sources, backref='users')
+    groups = db.relationship('Group', secondary=user_groups, backref='users')
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
 
     def __repr__(self):
@@ -100,6 +107,7 @@ class Metric(UserItem):
     __mapper_args__ = {
         'polymorphic_identity':'metrics',
         }
+    hash_vals = ["name"]
 
     id = db.Column(db.Integer, db.ForeignKey('useritem.id'), primary_key=True)
     name = db.Column(db.String(STRING_MAX))
@@ -114,6 +122,7 @@ class Source(UserItem):
     __mapper_args__ = {
         'polymorphic_identity':'sources',
         }
+    hash_vals = ["name"]
 
     id = db.Column(db.Integer, db.ForeignKey('useritem.id'), primary_key=True)
     name = db.Column(db.String(STRING_MAX))
@@ -121,6 +130,21 @@ class Source(UserItem):
 
     def __repr__(self):
         return "<Source(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
+
+class Group(UserItem):
+    __tablename__ = 'groups'
+    __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name'), )
+    __mapper_args__ = {
+        'polymorphic_identity': 'groups',
+        }
+    hash_vals = ["name"]
+
+    id = db.Column(db.Integer, db.ForeignKey('useritem.id'), primary_key=True)
+    name = db.Column(db.String(STRING_MAX))
+    hashkey = db.Column(db.String(STRING_MAX))
+
+    def __repr__(self):
+        return "<Group(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
 class PluginModel(db.Model):
     __tablename__ = 'pluginmodels'
@@ -153,6 +177,7 @@ class Data(db.Model):
     plugin_id = db.Column(db.String(STRING_MAX), db.ForeignKey('plugins.hashkey'))
     metric_id = db.Column(db.String(STRING_MAX), db.ForeignKey('metrics.name'))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
     source_id = db.Column(db.String(STRING_MAX), db.ForeignKey("sources.name"))
     plugin_model_id = db.Column(db.String(STRING_MAX), db.ForeignKey("pluginmodels.hashkey"))
     date = db.Column(db.DateTime(timezone=True))
@@ -181,6 +206,7 @@ class TimePoint(Data):
     data = db.Column(db.String(STRING_MAX))
 
     user = db.relationship("User", backref=db.backref('timepoints', order_by=id))
+    group = db.relationship("Group", backref=db.backref('timepoints', order_by=id))
     plugin = db.relationship("Plugin", backref=db.backref('timepoints', order_by=id))
     plugin_model = db.relationship("PluginModel", backref=db.backref('timepoints', order_by=id))
     metric = db.relationship("Metric", backref=db.backref('timepoints', order_by=id))
@@ -199,6 +225,7 @@ class Blob(Data):
     data = db.Column(db.Text)
 
     user = db.relationship("User", backref=db.backref('blobs', order_by=id))
+    group = db.relationship("Group", backref=db.backref('blobs', order_by=id))
     plugin = db.relationship("Plugin", backref=db.backref('blobs', order_by=id))
     plugin_model = db.relationship("PluginModel", backref=db.backref('blobs', order_by=id))
     metric = db.relationship("Metric", backref=db.backref('blobs', order_by=id))
@@ -228,3 +255,7 @@ def add_hashkey(mapper, connection, target):
 event.listen(TimePoint, "before_insert", add_hashkey)
 event.listen(Blob, "before_insert", add_hashkey)
 event.listen(PluginModel, "before_insert", add_hashkey)
+event.listen(User, "before_insert", add_hashkey)
+event.listen(Group, "before_insert", add_hashkey)
+event.listen(Metric, "before_insert", add_hashkey)
+event.listen(Source, "before_insert", add_hashkey)

@@ -4,7 +4,7 @@ import os
 DB_URL = 'sqlite:///realize.db'
 DEBUG = True
 
-ROOT_PATH = path(__file__)
+ROOT_PATH = path(__file__).dirname()
 REPO_PATH = ROOT_PATH.dirname()
 ENV_ROOT = REPO_PATH.dirname()
 
@@ -22,3 +22,8 @@ SECURITY_SEND_REGISTER_EMAIL = False
 
 SECURITY_PASSWORD_HASH = "bcrypt"
 SECURITY_PASSWORD_SALT = "test"
+
+BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
+BROKER_URL = 'redis://localhost:6379/2'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/2'
+CELERY_IMPORTS = ('core.tasks.runner',)

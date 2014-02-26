@@ -2,14 +2,6 @@ from core.database.models import TimePoint, Blob
 from fields import Field, FloatField, DictField
 import json
 
-class ModelContext(object):
-    """
-    Should specify user and plugin generally.
-    """
-    def __init__(self, **kwargs):
-        for k in kwargs:
-            setattr(self, k, kwargs[k])
-
 class ModelBase(object):
     id = None
     hashkey = None

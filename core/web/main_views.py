@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, abort, request, url_for
 from werkzeug.utils import redirect
+from core.manager import ExecutionContext
 from core.metrics.manager import MetricManager
-import settings
+from realize import settings
 import os
 from flask.ext.security import login_required
 from flask.ext.login import current_user
@@ -18,14 +19,14 @@ def index():
 @login_required
 def manage_plugins():
     from core.plugins.loader import plugins
-    from core.plugins.manager import PluginManager
-    installed_plugins = PluginManager(current_user).list()
+    installed_plugins = current_user.plugins
     return render_template("plugins.html", available_plugins=plugins, installed_plugins=[p.hashkey for p in installed_plugins])
 
 @main_views.route('/metrics')
 @login_required
 def metrics():
-    manager = MetricManager(current_user)
+    context = ExecutionContext(user=current_user)
+    manager = MetricManager(context)
     return render_template("metrics.html", installed_metrics=manager.list_with_values())
 
 class Forms(MethodView):
@@ -55,7 +56,8 @@ class Forms(MethodView):
             if v not in ['plugin', 'metric', 'source']:
                 new_vals[v] = vals[v]
 
-        manager = PluginManager(current_user)
+        context = ExecutionContext(user=current_user)
+        manager = PluginManager(context)
         data = manager.save_form(plugin_key, metric_name, **new_vals)
 
         return redirect(url_for('main_views.forms'))
