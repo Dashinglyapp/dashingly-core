@@ -1,6 +1,6 @@
 import hashlib
 from sqlalchemy import event
-import logging
+from realize.log import logging
 from datetime import datetime
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.security import UserMixin, RoleMixin
@@ -187,8 +187,7 @@ class PluginModel(db.Model):
 class Data(db.Model):
     __tablename__ = 'data'
     __table_args__ = (db.UniqueConstraint("plugin_id", "metric_id", "user_id", "hashkey"), )
-
-    hash_vals = ["plugin_id", "metric_id", "user_id", "data", "date"]
+    hash_vals = ["plugin_id", "metric_id", "user_id", "date", "data"]
 
     id = db.Column(db.Integer, primary_key=True)
     plugin_id = db.Column(db.String(STRING_MAX), db.ForeignKey('plugins.hashkey'))
@@ -259,7 +258,7 @@ def make_hash(vals):
         try:
             mhash.update(str(v))
         except Exception:
-            log.info("Could not hash vale {1}".format(v))
+            log.info("Could not hash value {1}".format(v))
             continue
 
     hashkey = mhash.hexdigest()

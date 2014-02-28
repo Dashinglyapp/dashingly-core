@@ -16,7 +16,11 @@ login_urls = {}
 
 for handler in oauth_handlers:
     mod = __import__("core.oauth.{0}".format(handler))
-    handler_settings = dict(settings.OAUTH_CONFIG[handler].items() + getattr(settings, "{0}_SECRET".format(handler.upper())).items())
+    secret_key = "{0}_SECRET".format(handler.upper())
+    if not hasattr(settings, secret_key):
+        continue
+
+    handler_settings = dict(settings.OAUTH_CONFIG[handler].items() + getattr(settings, secret_key).items())
     handler_obj = oauth.remote_app(
         handler,
         **handler_settings

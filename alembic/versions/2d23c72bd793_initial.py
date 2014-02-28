@@ -1,13 +1,13 @@
 """Initial
 
-Revision ID: 19d1356e451f
+Revision ID: 2d23c72bd793
 Revises: None
-Create Date: 2014-02-27 15:12:18.851113
+Create Date: 2014-02-28 12:11:02.525882
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '19d1356e451f'
+revision = '2d23c72bd793'
 down_revision = None
 
 from alembic import op
@@ -23,6 +23,13 @@ def upgrade():
     sa.Column('created', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('role',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=True),
+    sa.Column('description', sa.String(length=255), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('user',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -41,14 +48,7 @@ def upgrade():
     sa.UniqueConstraint('hashkey'),
     sa.UniqueConstraint('username')
     )
-    op.create_table('role',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=255), nullable=True),
-    sa.Column('description', sa.String(length=255), nullable=True),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('name')
-    )
-    op.create_table('plugins',
+    op.create_table('sources',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=True),
     sa.Column('hashkey', sa.String(length=255), nullable=True),
@@ -57,7 +57,7 @@ def upgrade():
     sa.UniqueConstraint('hashkey'),
     sa.UniqueConstraint('name')
     )
-    op.create_table('groups',
+    op.create_table('plugins',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=True),
     sa.Column('hashkey', sa.String(length=255), nullable=True),
@@ -94,7 +94,7 @@ def upgrade():
     sa.UniqueConstraint('hashkey'),
     sa.UniqueConstraint('name')
     )
-    op.create_table('sources',
+    op.create_table('groups',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=True),
     sa.Column('hashkey', sa.String(length=255), nullable=True),
@@ -103,16 +103,28 @@ def upgrade():
     sa.UniqueConstraint('hashkey'),
     sa.UniqueConstraint('name')
     )
-    op.create_table('user_sources',
+    op.create_table('user_plugins',
     sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('source_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['source_id'], ['sources.id'], ),
+    sa.Column('plugin_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['plugin_id'], ['plugins.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], )
     )
     op.create_table('user_groups',
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('group_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['group_id'], ['groups.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], )
+    )
+    op.create_table('user_metrics',
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('metric_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['metric_id'], ['metrics.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], )
+    )
+    op.create_table('user_sources',
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('source_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['source_id'], ['sources.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], )
     )
     op.create_table('pluginmodels',
@@ -130,18 +142,6 @@ def upgrade():
     sa.UniqueConstraint('hashkey'),
     sa.UniqueConstraint('metric_id', 'plugin_id'),
     sa.UniqueConstraint('name', 'plugin_id')
-    )
-    op.create_table('user_plugins',
-    sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('plugin_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['plugin_id'], ['plugins.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], )
-    )
-    op.create_table('user_metrics',
-    sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('metric_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['metric_id'], ['metrics.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], )
     )
     op.create_table('data',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -185,18 +185,18 @@ def downgrade():
     op.drop_table('timepoints')
     op.drop_table('blobs')
     op.drop_table('data')
-    op.drop_table('user_metrics')
-    op.drop_table('user_plugins')
     op.drop_table('pluginmodels')
-    op.drop_table('user_groups')
     op.drop_table('user_sources')
-    op.drop_table('sources')
+    op.drop_table('user_metrics')
+    op.drop_table('user_groups')
+    op.drop_table('user_plugins')
+    op.drop_table('groups')
     op.drop_table('metrics')
     op.drop_table('roles_users')
     op.drop_table('authorization')
-    op.drop_table('groups')
     op.drop_table('plugins')
-    op.drop_table('role')
+    op.drop_table('sources')
     op.drop_table('user')
+    op.drop_table('role')
     op.drop_table('useritem')
     ### end Alembic commands ###

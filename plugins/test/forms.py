@@ -1,5 +1,5 @@
 from core.plugins.forms import BaseForm, TextField, IntegerField, FloatField
-import manifest
+from plugins.test import manifest
 from core.plugins.proxies import MetricProxy, SourceProxy
 
 class SurveyForm(BaseForm):

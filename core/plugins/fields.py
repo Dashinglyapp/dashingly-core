@@ -11,14 +11,15 @@ class Field(object):
         self.help_text = help_text
         self.scope = scope
         self.default = default
+        self.data = {}
 
     def __get__(self, obj, obj_type):
         if obj is None:
             return self
-        return self.from_json(self.value)
+        return self.from_json(self.data.get(obj.hashkey, self.default))
 
     def __set__(self, obj, value):
-        self.value = self.to_json(value)
+        self.data[obj.hashkey] = self.to_json(value)
 
     @classmethod
     def from_json(cls, value):
@@ -31,7 +32,10 @@ class Field(object):
 class FloatField(Field):
     @classmethod
     def from_json(cls, value):
-        return float(value)
+        try:
+            return float(value)
+        except:
+            return 0
 
 class DateTimeField(Field):
     @classmethod

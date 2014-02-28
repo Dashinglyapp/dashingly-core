@@ -5,6 +5,9 @@ from core.database.permissions import PermissionsManager
 from core.manager import BaseManager
 from sqlalchemy.exc import IntegrityError
 from core.plugins.models import DuplicateRecord
+from realize.log import logging
+
+log = logging.getLogger(__name__)
 
 class DBManager(BaseManager):
     id_vals = ["id", "hashkey"]
@@ -19,7 +22,15 @@ class DBManager(BaseManager):
         if self.plugin is not None:
             self.perm_manager = PermissionsManager(self.context)
 
-    def add(self, obj):
+    def get_or_create(self, obj, query_data=False):
+        new_obj = self.get(obj, query_data=query_data)
+        if new_obj is None:
+            new_obj = self.add(obj)
+        else:
+            new_obj = self.translate_object(new_obj)
+        return new_obj
+
+    def setup_model(self, obj):
         data = obj.get_data()
 
         metric = get_cls(self.session, Metric, obj.metric_proxy)
@@ -31,21 +42,34 @@ class DBManager(BaseManager):
             'data': data,
             'plugin': self.plugin,
             'plugin_model_id': obj.hashkey,
-        }
+            }
 
         if self.user is not None:
             attribs['user'] = self.user
         elif self.group is not None:
             attribs['group'] = self.group
 
-        mod = obj.model_cls(**attribs)
         for v in self.modify_vals:
-            setattr(mod, v, getattr(obj, v))
+            attribs[v] = getattr(obj, v)
+
+        return attribs
+
+    def get(self, obj, query_data=False):
+        attribs = self.setup_model(obj)
+        if not query_data:
+            del attribs['data']
+        instance = self.session.query(obj.model_cls).filter_by(**attribs).first()
+        return instance
+
+    def add(self, obj):
+        attribs = self.setup_model(obj)
+        mod = obj.model_cls(**attribs)
 
         try:
             self.session.add(mod)
             self.session.commit()
         except IntegrityError:
+            log.exception("Found a duplicate record.")
             self.session.rollback()
             raise DuplicateRecord()
 
@@ -148,7 +172,10 @@ class DBManager(BaseManager):
 
         if first or last:
             if first:
-                query = query.first()
+                if query.count() > 0:
+                    query = query.first()
+                else:
+                    return None
             if last:
                 if query.count() > 0:
                     query = query[-1]
