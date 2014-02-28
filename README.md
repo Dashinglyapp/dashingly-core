@@ -5,22 +5,28 @@ Get started with Vagrant
 
 The easiest way to get started is with a Vagrant virtual machine:
 
-```
-Install vagrant (see this page -- http://www.vagrantup.com/downloads)
+First, [Install VirtualBox](https://www.virtualbox.org/wiki/Downloads).
+
+Next [Install Vagrant](http://www.vagrantup.com/downloads)
+
+Then type:
+```sh
 vagrant up
 ```
 
-After running `vagrant up`, you will be able to ssh into the box and run the webserver:
+Get some food. You have time. An hour or so later it should finish.
 
-```
+Then type:
+
+```sh
 vagrant ssh
 cd /vagrant
 python app.py
 ```
 
-Opening up localhost:8080 in the browser on your machine will now show the webserver (vagrant forwards port 5000 from the virtual machine).  Vagrant keeps folders in sync, so editing things in the project folder will cause the changes to be mirrored and reloaded in Vagrant automatically.
+Vagrant forwards port 5000 in VirtualBox to [http://localhost:8080](http://localhost:8080) on your host machine, so you should be able to click the link and see the Realize UI.  Vagrant keeps folders in sync, so editing things in the project folder will cause the changes to be mirrored and reloaded in Vagrant automatically.
 
-If you want to run delayed tasks, open another ssh connection:
+If you want to run delayed tasks, open another ssh connection: (note to self: reconsider the name "delayed" if there are different types of delayed tasks)
 
 ```
 vagrant ssh
