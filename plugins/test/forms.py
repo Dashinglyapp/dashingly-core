@@ -20,3 +20,6 @@ class MoodForm(BaseForm):
     plugin_proxy = manifest.plugin_proxy
 
     number = IntegerField(description="Number on a 1-10 scale.")
+
+class SettingsForm(BaseForm):
+    pass

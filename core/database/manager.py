@@ -3,6 +3,8 @@ from core.plugins.proxies import MetricProxy, SourceProxy, PluginProxy, PluginMo
 from core.util import InvalidObjectException, get_cls
 from core.database.permissions import PermissionsManager
 from core.manager import BaseManager
+from sqlalchemy.exc import IntegrityError
+from core.plugins.models import DuplicateRecord
 
 class DBManager(BaseManager):
     id_vals = ["id", "hashkey"]
@@ -36,13 +38,17 @@ class DBManager(BaseManager):
         elif self.group is not None:
             attribs['group'] = self.group
 
-
         mod = obj.model_cls(**attribs)
         for v in self.modify_vals:
             setattr(mod, v, getattr(obj, v))
 
-        self.session.add(mod)
-        self.session.commit()
+        try:
+            self.session.add(mod)
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise DuplicateRecord()
+
         obj.id = mod.id
         obj.hashkey = mod.hashkey
 
@@ -75,7 +81,7 @@ class DBManager(BaseManager):
         return obj
 
     def _query_base(self, plugin_proxy=None, metric_proxy=None, query_cls=TimePoint):
-        query = self.session.query(query_cls)
+        query = self.session.query(query_cls).order_by("date")
         if self.user is not None:
             query = query.filter(getattr(query_cls, "user") == self.user)
         elif self.group is not None:
@@ -135,10 +141,21 @@ class DBManager(BaseManager):
 
         return self.translate_objects(query.all())
 
-    def query_filter(self, model_cls, plugin_proxy=None, metric_proxy=None, **kwargs):
+    def query_filter(self, model_cls, plugin_proxy=None, metric_proxy=None, first=False, last=False, **kwargs):
         query = self._query_base(plugin_proxy, metric_proxy, query_cls=model_cls)
         for attr, value in kwargs.items():
             query = query.filter(getattr(model_cls, attr) == value)
+
+        if first or last:
+            if first:
+                query = query.first()
+            if last:
+                if query.count() > 0:
+                    query = query[-1]
+                else:
+                    return None
+            return self.translate_object(query)
+
         return self.translate_objects(query.all())
 
     def query_time_range(self, query_column, plugin_proxy=None, metric_proxy=None, start=None, end=None):
@@ -152,6 +169,18 @@ class DBManager(BaseManager):
 
     def query_blob_filter(self, plugin_proxy=None, metric_proxy=None, **kwargs):
         return self.query_filter(Blob, plugin_proxy, metric_proxy, **kwargs)
+
+    def query_blob_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self.query_filter(Blob, plugin_proxy, metric_proxy, last=True, **kwargs)
+
+    def query_blob_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self.query_filter(Blob, plugin_proxy, metric_proxy, first=True, **kwargs)
+
+    def query_time_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self.query_filter(TimePoint, plugin_proxy, metric_proxy, last=True, **kwargs)
+
+    def query_time_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self.query_filter(TimePoint, plugin_proxy, metric_proxy, first=True, **kwargs)
 
     def register_plugin(self, plugin_cls):
         plugin_proxy = PluginProxy(name=plugin_cls.name, hashkey=plugin_cls.hashkey)

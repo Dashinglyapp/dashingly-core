@@ -68,6 +68,23 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return "<User(name='%s', lastname='%s', password='%s')>" % (self.username, self.last_name, self.password)
 
+class Authorization(db.Model):
+    __table_args__ = (db.UniqueConstraint('user_id', 'name'), )
+    hash_vals = ["name"]
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(STRING_MAX))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    access_token = db.Column(db.String(STRING_MAX))
+    refresh_token = db.Column(db.String(STRING_MAX))
+    expires_in = db.Column(db.String(STRING_MAX))
+
+    user = db.relationship("User", backref=db.backref('authorizations', order_by=id))
+
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
 class UserItem(db.Model):
     __tablename__ = 'useritem'
 
@@ -148,7 +165,7 @@ class Group(UserItem):
 
 class PluginModel(db.Model):
     __tablename__ = 'pluginmodels'
-    __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name'), )
+    __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name', 'plugin_id'), db.UniqueConstraint('metric_id', 'plugin_id'), )
     hash_vals = ["plugin_id", "metric_id", "name"]
 
     id = db.Column(db.Integer, primary_key=True)
@@ -169,7 +186,7 @@ class PluginModel(db.Model):
 
 class Data(db.Model):
     __tablename__ = 'data'
-    __table_args__ = (db.Index('unique_hash_time', "plugin_id", "metric_id", "user_id", "hashkey"), db.UniqueConstraint('hashkey'), )
+    __table_args__ = (db.UniqueConstraint("plugin_id", "metric_id", "user_id", "hashkey"), )
 
     hash_vals = ["plugin_id", "metric_id", "user_id", "data", "date"]
 

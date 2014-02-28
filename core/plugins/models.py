@@ -2,6 +2,10 @@ from core.database.models import TimePoint, Blob
 from fields import Field, FloatField, DictField
 import json
 
+
+class DuplicateRecord(Exception):
+    pass
+
 class ModelBase(object):
     id = None
     hashkey = None
@@ -44,10 +48,15 @@ class BlobBase(ModelBase):
                 fields.append(f)
         return fields
 
+    def get_to_json(self, f):
+        cls = self.__class__
+        field_cls = getattr(cls, f).__class__
+        return field_cls.to_json
+
     def get_data(self):
         data = {}
         for f in self.get_fields():
-            data[f] = getattr(self, f)
+            data[f] = self.get_to_json(f)(getattr(self, f))
         return json.dumps(data)
 
     def set_data(self, data):

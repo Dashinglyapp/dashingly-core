@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h3>Your Accounts</h3>
+    {% for l in all_logins %}
+        {% set url = all_logins[l] %}
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">{{ l }}</h3>
+            </div>
+            <div class="panel-body">
+                <a href="{{ url }}">Click here to connect.</a>  Right now, this account is {% if l in current_auth %}connected{% else %} disconnected {% endif %}.
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

@@ -1,18 +1,33 @@
 from core.util import get_cls
 from core.manager import BaseManager, ExecutionContext
 
+class InvalidMethodException(Exception):
+    pass
+
+class InvalidRouteException(Exception):
+    pass
+
 class PluginManager(BaseManager):
     def list(self):
         return self.user.plugins
 
-    def lookup_plugin(self, plugin_hashkey):
-        from core.database.models import Plugin
-        from app import db
-        return db.session.query(Plugin).filter(Plugin.hashkey == plugin_hashkey).first()
-
-    def run_actions(self, plugin_hashkey, action_name, **kwargs):
+    def get_plugin(self, plugin_hashkey):
         from core.plugins.loader import plugins
         plugin_cls = plugins[plugin_hashkey]
+        return plugin_cls
+
+    def call_route_handler(self, path, method, data):
+        plugin_cls = self.get_plugin(self.plugin.hashkey)
+        for view_cls in plugin_cls.views:
+            if view_cls.path == path:
+                manager = self.get_manager(self.plugin.hashkey)
+                view = view_cls(context=self.context, manager=manager)
+                func = getattr(view, method)
+                return func(data)
+        raise InvalidRouteException()
+
+    def run_actions(self, plugin_hashkey, action_name, **kwargs):
+        plugin_cls = self.get_plugin(plugin_hashkey)
         manager = self.get_manager(plugin_hashkey)
         context = ExecutionContext(plugin=self.lookup_plugin(plugin_hashkey), user=self.user)
         plugin = plugin_cls(context, manager)

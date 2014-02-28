@@ -1,4 +1,5 @@
 from path import path
+from datetime import timedelta
 import os
 
 DB_URL = 'sqlite:///realize.db'
@@ -27,3 +28,32 @@ BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
 BROKER_URL = 'redis://localhost:6379/2'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/2'
 CELERY_IMPORTS = ('core.tasks.runner',)
+
+CELERYBEAT_SCHEDULE = {
+    'run-tasks-hourly': {
+        'task': 'core.tasks.runner.run_interval_tasks',
+        'schedule': timedelta(seconds=60 * 60),
+        'args': (60 * 60, )
+    },
+    'run-tasks-daily': {
+        'task': 'core.tasks.runner.run_interval_tasks',
+        'schedule': timedelta(seconds=24 * 60 * 60),
+        'args': (24 * 60 * 60, )
+    }
+    }
+
+OAUTH_CONFIG = {
+    'github': {
+        'request_token_params': {'scope': 'user:email, repo'},
+        'base_url': 'https://api.github.com/',
+        'request_token_url': None,
+        'access_token_method': 'POST',
+        'access_token_url': 'https://github.com/login/oauth/access_token',
+        'authorize_url': 'https://github.com/login/oauth/authorize'
+    }
+}
+
+try:
+    from realize.private import *
+except:
+    pass

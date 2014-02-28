@@ -1,3 +1,5 @@
+from dateutil import parser
+
 class Field(object):
     """
     Basic field class.  Used to store values.
@@ -30,6 +32,19 @@ class FloatField(Field):
     @classmethod
     def from_json(cls, value):
         return float(value)
+
+class DateTimeField(Field):
+    @classmethod
+    def from_json(cls, value):
+        if isinstance(value, basestring):
+            return parser.parse(value)
+        return value
+
+    @classmethod
+    def to_json(cls, value):
+        if isinstance(value, basestring):
+            return value
+        return value.isoformat()
 
 class ListField(Field):
     """

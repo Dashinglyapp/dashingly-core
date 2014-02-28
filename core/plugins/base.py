@@ -3,6 +3,11 @@ from proxies import PluginProxy
 class BasePlugin(object):
     name = None
     hashkey = None
+    routes = []
+    forms = []
+    models = []
+    views = []
+    permissions = []
 
     def __init__(self, context, manager):
 
