@@ -52,7 +52,7 @@ class PermissionsManager(BaseManager):
         plugin_cls = plugins[plugin.hashkey]
         plugin_model_cls = None
         for m in plugin_cls.models:
-            if m.hashkey == obj.plugin_model.hashkey:
+            if m.plugin_model_proxy.hashkey == obj.plugin_model.hashkey:
                 plugin_model_cls = m
 
         if plugin_model_cls is None:

@@ -1,8 +1,8 @@
 from core.plugins.base import BasePlugin
 from core.plugins.proxies import MetricProxy
 from core.plugins.permissions import AuthorizationPermission
-from plugins.test.models import MoodModel, DataModel
-from plugins.test.forms import SurveyForm, MoodForm
+from plugins.test.models import MoodModel, DataModel, SettingsModel
+from plugins.test.forms import SurveyForm, MoodForm, SettingsForm
 from plugins.test.views import GetStuffView
 from datetime import datetime
 from plugins.test import manifest
@@ -10,8 +10,9 @@ from plugins.test import manifest
 class TestPlugin(BasePlugin):
     name = manifest.NAME
     description = manifest.DESCRIPTION
-    models = [MoodModel, DataModel]
+    models = [MoodModel, DataModel, SettingsModel]
     forms = [SurveyForm, MoodForm]
+    settings_form = SettingsForm
     views = [GetStuffView]
     hashkey = manifest.HASHKEY
 

@@ -3,6 +3,7 @@ from core.plugins.proxies import MetricProxy
 from core.plugins.permissions import AuthorizationPermission
 from plugins.github.models import GithubCommits, DailyCommits
 from plugins.github.tasks import ScrapeTask
+from plugins.github.views import GithubWidgetView
 from datetime import datetime
 from plugins.github import manifest
 
@@ -11,6 +12,7 @@ class GithubPlugin(BasePlugin):
     description = manifest.DESCRIPTION
     models = [GithubCommits, DailyCommits]
     tasks = [ScrapeTask]
+    views = [GithubWidgetView]
     permissions = [AuthorizationPermission(name="github")]
     hashkey = manifest.HASHKEY
 

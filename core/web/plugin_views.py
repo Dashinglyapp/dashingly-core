@@ -36,6 +36,7 @@ def remove(plugin_hashkey):
 def configure(plugin_hashkey):
     context = ExecutionContext(user=current_user)
     manager = PluginManager(context)
+    return manager.get_settings(plugin_hashkey, request.form)
 
 class PluginRoute(Resource):
     def get_manager(self, plugin_hashkey):

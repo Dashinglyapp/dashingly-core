@@ -15,3 +15,10 @@ class DataModel(BlobBase):
 
     number = Field()
     text = Field()
+
+class SettingsModel(BlobBase):
+    metric_proxy = MetricProxy(name="settings")
+    source_proxy = SourceProxy(name="self")
+    perms = [Scope(ZonePerm("user", current=True), BlockPerm("plugin", current=True))]
+
+    name = Field()
