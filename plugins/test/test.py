@@ -1,21 +1,19 @@
 from core.plugins.base import BasePlugin
 from core.plugins.proxies import MetricProxy
 from core.plugins.permissions import AuthorizationPermission
-from models import MoodModel, DataModel, GithubCommits
-from forms import SurveyForm, MoodForm
-from tasks import ScrapeTask
-from views import GetStuffView
+from plugins.test.models import MoodModel, DataModel, SettingsModel
+from plugins.test.forms import SurveyForm, MoodForm, SettingsForm
+from plugins.test.views import GetStuffView
 from datetime import datetime
-import manifest
+from plugins.test import manifest
 
 class TestPlugin(BasePlugin):
     name = manifest.NAME
     description = manifest.DESCRIPTION
-    models = [MoodModel, DataModel, GithubCommits]
+    models = [MoodModel, DataModel, SettingsModel]
     forms = [SurveyForm, MoodForm]
-    tasks = [ScrapeTask]
+    settings_form = SettingsForm
     views = [GetStuffView]
-    permissions = [AuthorizationPermission(name="github")]
     hashkey = manifest.HASHKEY
 
     def setup(self):

@@ -1,6 +1,7 @@
-from core.plugins.forms import BaseForm, TextField, IntegerField, FloatField
-import manifest
+from core.plugins.forms import BaseForm, TextField, IntegerField, FloatField, SettingsForm
+from plugins.test import manifest
 from core.plugins.proxies import MetricProxy, SourceProxy
+from plugins.test.models import SettingsModel
 
 class SurveyForm(BaseForm):
     heading = "Please enter some information about your mood."
@@ -21,5 +22,6 @@ class MoodForm(BaseForm):
 
     number = IntegerField(description="Number on a 1-10 scale.")
 
-class SettingsForm(BaseForm):
-    pass
+class SettingsForm(SettingsForm):
+    model = SettingsModel
+    name = TextField(description="Enter your name, man!")

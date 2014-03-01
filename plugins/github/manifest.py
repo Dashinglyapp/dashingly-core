@@ -1,7 +1,7 @@
 from core.plugins.proxies import PluginProxy
 
-NAME = "test"
-HASHKEY = "1"
-DESCRIPTION = "The best test plugin in the west."
+NAME = "github"
+HASHKEY = "github1"
+DESCRIPTION = "Pulls your commit history our of github."
 
 plugin_proxy = PluginProxy(name=NAME, hashkey=HASHKEY)

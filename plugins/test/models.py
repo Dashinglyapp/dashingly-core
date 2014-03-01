@@ -16,13 +16,9 @@ class DataModel(BlobBase):
     number = Field()
     text = Field()
 
-class GithubCommits(BlobBase):
-    metric_proxy = MetricProxy(name="commits")
-    source_proxy = MetricProxy(name="github")
-    perms = [Scope(ZonePerm("user", current=True), BlockPerm("plugin", all=True))]
+class SettingsModel(BlobBase):
+    metric_proxy = MetricProxy(name="settings")
+    source_proxy = SourceProxy(name="self")
+    perms = [Scope(ZonePerm("user", current=True), BlockPerm("plugin", current=True))]
 
-    date = DateTimeField()
-    repo_name = Field()
-    repo_url = Field()
-    message = Field()
-    url = Field()
+    name = Field()

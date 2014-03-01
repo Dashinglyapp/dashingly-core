@@ -1,5 +1,6 @@
 from core.util import get_cls
 from core.manager import BaseManager, ExecutionContext
+from flask import jsonify
 
 class InvalidMethodException(Exception):
     pass
@@ -19,11 +20,19 @@ class PluginManager(BaseManager):
     def call_route_handler(self, path, method, data):
         plugin_cls = self.get_plugin(self.plugin.hashkey)
         for view_cls in plugin_cls.views:
-            if view_cls.path == path:
+            widget = None
+            path_start = (path.startswith(view_cls.path) and not view_cls.path == path)
+            if path_start:
+                widget = path.split("/")[-1]
+
+            data_copy = data.copy()
+            data_copy['widget'] = widget
+            if view_cls.path == path or path_start:
                 manager = self.get_manager(self.plugin.hashkey)
                 view = view_cls(context=self.context, manager=manager)
                 func = getattr(view, method)
-                return func(data)
+                return func(data_copy)
+
         raise InvalidRouteException()
 
     def run_actions(self, plugin_hashkey, action_name, **kwargs):
@@ -88,3 +97,18 @@ class PluginManager(BaseManager):
     def save_form(self, plugin_hashkey, metric_name, **kwargs):
         from proxies import MetricProxy
         return self.run_actions(plugin_hashkey, "save_forms", metric=MetricProxy(name=metric_name), **kwargs)
+
+    def get_settings(self, plugin_hashkey, data):
+        plugin_cls = self.get_plugin(plugin_hashkey)
+        manager = self.get_manager(plugin_hashkey)
+        if plugin_cls.settings_form is None:
+            return jsonify({})
+
+        obj_cls = plugin_cls.settings_form.model
+        obj = obj_cls()
+        obj = manager.get_or_create(obj, query_data=False)
+        form = plugin_cls.settings_form()
+        for f in form:
+            setattr(form, f.name, getattr(obj, f.name, None))
+
+        return jsonify(form.as_json())

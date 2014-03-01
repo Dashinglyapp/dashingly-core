@@ -2,11 +2,11 @@ from core.plugins.models import DuplicateRecord
 from core.plugins.tasks import TaskBase, Interval
 from core.plugins.proxies import TaskProxy
 from datetime import datetime, timedelta
-from models import GithubCommits
+from plugins.github.models import GithubCommits, DailyCommits
 from core.plugins.proxies import MetricProxy
-import manifest
+from plugins.github import manifest
 import pytz
-
+from dateutil import parser
 
 class ScrapeTask(TaskBase):
     interval = Interval.hourly
@@ -20,8 +20,6 @@ class ScrapeTask(TaskBase):
         else:
             last_time = last_m.date.replace(tzinfo=pytz.utc)
 
-        print last_time
-
         github = self.auth_manager.get_auth("github")
         user = github.get("https://api.github.com/user").json()
         repos = github.get(user['repos_url']).json()
@@ -31,15 +29,15 @@ class ScrapeTask(TaskBase):
             data = github.get(commit_url)
             commits = data.json()
             all_commits += commits
-            while hasattr(data.links, "next"):
-                commit_url = data.links['next']
+            while 'next' in data.links and data.links['next'] is not None and 'url' in data.links['next']:
+                commit_url = data.links['next']['url']
                 data = github.get(commit_url)
                 commits = data.json()
                 all_commits += commits
 
             user_commits = []
-            for c in commits:
-                if 'author' in c and 'id' in c['author']:
+            for c in all_commits:
+                if c is not None and 'author' in c and c['author'] is not None and 'id' in c['author']:
                     if c['author']['id'] == user['id']:
                         user_commits.append(c)
 
@@ -55,8 +53,11 @@ class ScrapeTask(TaskBase):
                 except DuplicateRecord:
                     pass
 
-
-
-
-
-
+            for c in user_commits:
+                date = c['commit']['author']['date']
+                date_obj = parser.parse(date)
+                date_obj = date_obj.replace(hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
+                daily_commits = DailyCommits(date=date_obj, data=0)
+                commits = self.manager.get_or_create(daily_commits)
+                commits.data += 1
+                self.manager.update(commits)

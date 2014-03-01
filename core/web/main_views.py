@@ -6,8 +6,8 @@ from realize import settings
 import os
 from flask.ext.security import login_required
 from flask.ext.login import current_user
-from wtforms_jsonschema.jsonschema import WTFormToJSONSchema
 import json
+from core.plugins.forms import SettingsForm
 
 from flask.views import MethodView
 
@@ -34,10 +34,6 @@ def metrics():
 class Forms(MethodView):
     decorators = [login_required]
 
-    def convert_to_json(self, form):
-        schema_repr = WTFormToJSONSchema().convert_form(form)
-        return schema_repr['properties']
-
     def get(self):
         from core.plugins.loader import plugins
         plugin_keys = [p.hashkey for p in current_user.plugins]
@@ -46,9 +42,11 @@ class Forms(MethodView):
             forms += plugins[p].forms
         form_html = []
         for f in forms:
+            if isinstance(f, SettingsForm):
+                continue
             form_obj = f(request.form)
             form = render_template("forms/basic_form.html", form=form_obj)
-            form_html.append({'form_json': self.convert_to_json(form_obj), 'metric': f.metric_proxy, 'plugin': f.plugin_proxy, 'form': form})
+            form_html.append({'form_json': form_obj.as_json(), 'metric': f.metric_proxy, 'plugin': f.plugin_proxy, 'form': form})
 
         return render_template('forms.html', form_html=form_html)
 

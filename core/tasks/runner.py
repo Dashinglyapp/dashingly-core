@@ -62,7 +62,7 @@ def run_interval_tasks(interval):
     from core.plugins.loader import plugins
     for user in User.query.all():
         for plugin in user.plugins:
-            run_delayed_plugin.delay(plugin.hashkey, user_id=user.id, interval=interval)
+            run_delayed_plugin(plugin.hashkey, user_id=user.id, interval=interval)
 
     for group in Group.query.all():
         for plugin in plugins:

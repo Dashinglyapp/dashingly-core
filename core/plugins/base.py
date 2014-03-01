@@ -8,6 +8,7 @@ class BasePlugin(object):
     models = []
     views = []
     permissions = []
+    settings_form = None
 
     def __init__(self, context, manager):
 
@@ -36,4 +37,18 @@ class BasePlugin(object):
         pass
 
     def save_forms(self, metric, **kwargs):
-        pass
+        for form_cls in self.forms:
+            if form_cls.metric_proxy.name == metric.name:
+                form = form_cls(**kwargs)
+                form.manager = self.manager
+                form.context = self.context
+                if form.validate():
+                    form.save()
+
+    def save_settings(self, **kwargs):
+        if self.settings_form is not None:
+            form = self.settings_form(**kwargs)
+            form.manager = self.manager
+            form.context = self.context
+            if form.validate():
+                form.save()

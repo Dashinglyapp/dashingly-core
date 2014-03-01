@@ -14,10 +14,11 @@ class PluginProxy(object):
         self.hashkey = hashkey
 
 class PluginModelProxy(object):
-    def __init__(self, plugin_id, metric_id, name):
+    def __init__(self, plugin_id=None, metric_id=None, name=None, hashkey=None):
         self.plugin_id = plugin_id
         self.metric_id = metric_id
         self.name = name
+        self.hashkey = hashkey
 
 class TaskProxy(object):
     def __init__(self, name):
