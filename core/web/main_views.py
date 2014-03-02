@@ -8,14 +8,15 @@ from flask.ext.security import login_required
 from flask.ext.login import current_user
 from wtforms_jsonschema.jsonschema import WTFormToJSONSchema
 import json
-
 from flask.views import MethodView
 
-main_views = Blueprint('main_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
+main_views = Blueprint('main_views', __name__)
 
+# def index():
+#     return render_template("index.html")
 @main_views.route('/')
 def index():
-    return render_template("index.html")
+    return render_template(settings.INDEX_TEMPLATE)
 
 @main_views.route('/plugins/list')
 @login_required

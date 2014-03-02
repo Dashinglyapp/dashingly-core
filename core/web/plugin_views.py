@@ -10,7 +10,7 @@ from flask import current_app
 from core.plugins.manager import PluginManager
 from core.plugins.proxies import PluginProxy
 
-plugin_views = Blueprint('plugin_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
+plugin_views = Blueprint('plugin_views', __name__)
 api = Api()
 api.init_app(plugin_views)
 

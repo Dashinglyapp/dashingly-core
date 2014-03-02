@@ -22,11 +22,23 @@ def make_celery(app):
     celery.Task = ContextTask
     return celery
 
+class CustomFlask(Flask):
+    ''' Reconfigures Jinja template delimiters so they don't conflict with Angular's '''
+    jinja_options = Flask.jinja_options.copy()
+    jinja_options.update(dict(
+        block_start_string='<%%',
+        block_end_string='%%>',
+        variable_start_string='<%%=',
+        variable_end_string='%%>',
+        comment_start_string='<#',
+        comment_end_string='#>',
+    ))
+
 def create_app():
-    app = Flask(__name__, template_folder='templates')
+    app = CustomFlask(__name__, template_folder=settings.TEMPLATES_PATH)
     app.register_blueprint(main_views)
-    app.register_blueprint(plugin_views)
-    app.register_blueprint(oauth_views)
+    # app.register_blueprint(plugin_views)
+    # app.register_blueprint(oauth_views)
     app.config.from_object('realize.settings')
     db.app = app
     db.init_app(app)
