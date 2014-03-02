@@ -1,5 +1,7 @@
 This is a minimal and work-in-progress version of [Realize](http://www.realize.pe).
 
+[![Build Status](https://travis-ci.org/realizeapp/realize-core.png?branch=master)](https://travis-ci.org/realizeapp/realize-core)
+
 Get started with Vagrant
 ----------------------------------------
 
@@ -66,4 +68,10 @@ Create migrations (if you change core/database/models.py):
 
 ```
 alembic revision --autogenerate -m "MESSAGE HERE"
+```
+
+Run tests:
+
+```
+nosetests --with-coverage --cover-package="core" --logging-level="INFO"
 ```

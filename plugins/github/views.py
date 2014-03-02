@@ -1,4 +1,4 @@
-from core.plugins.views import WidgetView, ModelChartWidget
+from core.plugins.lib.views import WidgetView, ModelChartWidget
 from plugins.github.models import DailyCommits
 
 class GithubWidgetView(WidgetView):

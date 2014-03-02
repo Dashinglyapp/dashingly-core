@@ -95,7 +95,7 @@ class PluginManager(BaseManager):
         db.session.commit()
 
     def save_form(self, plugin_hashkey, metric_name, **kwargs):
-        from proxies import MetricProxy
+        from lib.proxies import MetricProxy
         return self.run_actions(plugin_hashkey, "save_forms", metric=MetricProxy(name=metric_name), **kwargs)
 
     def get_settings(self, plugin_hashkey, data):

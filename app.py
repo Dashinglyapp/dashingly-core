@@ -35,6 +35,8 @@ def create_app():
 def create_test_app():
     app = create_app()
     app.config.from_object('realize.test_settings')
+    db.app = app
+    db.init_app(app)
     return app
 
 app = create_app()

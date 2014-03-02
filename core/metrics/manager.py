@@ -6,7 +6,7 @@ class MetricManager(BaseManager):
         return self.user.metrics
 
     def list_with_values(self, start=None, end=None):
-        from core.plugins.proxies import PluginProxy, MetricProxy
+        from core.plugins.lib.proxies import PluginProxy, MetricProxy
         plugins = self.user.plugins
 
         metrics = {}

@@ -1,5 +1,5 @@
 from core.manager import BaseManager
-from core.plugins.permissions import AuthorizationPermission
+from core.plugins.lib.permissions import AuthorizationPermission
 from requests_oauthlib import OAuth2Session
 from realize import settings
 

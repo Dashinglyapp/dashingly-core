@@ -1,6 +1,6 @@
-from core.plugins.base import BasePlugin
-from core.plugins.proxies import MetricProxy
-from core.plugins.permissions import AuthorizationPermission
+from core.plugins.lib.base import BasePlugin
+from core.plugins.lib.proxies import MetricProxy
+from core.plugins.lib.permissions import AuthorizationPermission
 from plugins.github.models import GithubCommits, DailyCommits
 from plugins.github.tasks import ScrapeTask
 from plugins.github.views import GithubWidgetView

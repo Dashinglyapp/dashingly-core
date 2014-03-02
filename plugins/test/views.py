@@ -1,4 +1,4 @@
-from core.plugins.views import BaseView
+from core.plugins.lib.views import BaseView
 
 class GetStuffView(BaseView):
     path = "hello"
