@@ -1,9 +1,9 @@
-from core.plugins.models import DuplicateRecord
-from core.plugins.tasks import TaskBase, Interval
-from core.plugins.proxies import TaskProxy
+from core.plugins.lib.models import DuplicateRecord
+from core.plugins.lib.tasks import TaskBase, Interval
+from core.plugins.lib.proxies import TaskProxy
 from datetime import datetime, timedelta
 from plugins.github.models import GithubCommits, DailyCommits
-from core.plugins.proxies import MetricProxy
+from core.plugins.lib.proxies import MetricProxy
 from plugins.github import manifest
 import pytz
 from dateutil import parser

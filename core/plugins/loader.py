@@ -3,7 +3,7 @@ import os
 import sys
 from core.database.manager import DBManager
 from app import db
-from core.plugins.base import BasePlugin
+from core.plugins.lib.base import BasePlugin
 from core.manager import ExecutionContext
 
 class PluginLoader():

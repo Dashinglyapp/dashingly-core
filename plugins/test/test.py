@@ -1,6 +1,6 @@
-from core.plugins.base import BasePlugin
-from core.plugins.proxies import MetricProxy
-from core.plugins.permissions import AuthorizationPermission
+from core.plugins.lib.base import BasePlugin
+from core.plugins.lib.proxies import MetricProxy
+from core.plugins.lib.permissions import AuthorizationPermission
 from plugins.test.models import MoodModel, DataModel, SettingsModel
 from plugins.test.forms import SurveyForm, MoodForm, SettingsForm
 from plugins.test.views import GetStuffView

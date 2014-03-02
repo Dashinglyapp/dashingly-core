@@ -7,7 +7,7 @@ import os
 from flask.ext.security import login_required
 from flask.ext.login import current_user
 import json
-from core.plugins.forms import SettingsForm
+from core.plugins.lib.forms import SettingsForm
 
 from flask.views import MethodView
 

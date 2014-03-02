@@ -1,5 +1,5 @@
 from core.database.models import TimePoint, Blob
-from core.plugins.scope import Scope, ZonePerm, BlockPerm
+from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from fields import Field, FloatField, DictField, DateTimeField, IntegerField
 import json
 

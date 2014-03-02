@@ -1,6 +1,6 @@
-from core.plugins.forms import BaseForm, TextField, IntegerField, FloatField, SettingsForm
+from core.plugins.lib.forms import BaseForm, TextField, IntegerField, FloatField, SettingsForm
 from plugins.test import manifest
-from core.plugins.proxies import MetricProxy, SourceProxy
+from core.plugins.lib.proxies import MetricProxy, SourceProxy
 from plugins.test.models import SettingsModel
 
 class SurveyForm(BaseForm):

@@ -8,7 +8,7 @@ from realize import settings
 import os
 from flask import current_app
 from core.plugins.manager import PluginManager
-from core.plugins.proxies import PluginProxy
+from core.plugins.lib.proxies import PluginProxy
 
 plugin_views = Blueprint('plugin_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
 api = Api()

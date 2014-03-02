@@ -1,7 +1,7 @@
-from core.plugins.proxies import MetricProxy, SourceProxy
-from core.plugins.models import TimePointBase, BlobBase
-from core.plugins.fields import Field, ListField, DateTimeField, FloatField
-from core.plugins.scope import Scope, ZonePerm, BlockPerm
+from core.plugins.lib.proxies import MetricProxy, SourceProxy
+from core.plugins.lib.models import TimePointBase, BlobBase
+from core.plugins.lib.fields import Field, ListField, DateTimeField, FloatField
+from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 
 class DailyCommits(TimePointBase):
     metric_proxy = MetricProxy(name="dailycommits")

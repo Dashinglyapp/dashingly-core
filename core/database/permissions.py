@@ -1,5 +1,8 @@
-from core.plugins.scope import Scope, ZonePerm, BlockPerm
+from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from core.manager import BaseManager
+from realize.log import logging
+
+log = logging.getLogger(__name__)
 
 class InvalidPermissionsException(Exception):
     pass

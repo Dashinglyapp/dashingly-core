@@ -1,4 +1,4 @@
-from core.plugins.scope import TaskScope
+from core.plugins.lib.scope import TaskScope
 
 class TaskBase(object):
     name = None

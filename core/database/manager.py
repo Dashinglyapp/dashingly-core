@@ -1,10 +1,10 @@
 from models import Metric, Source, Plugin, TimePoint, Blob, PluginModel
-from core.plugins.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
+from core.plugins.lib.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
 from core.util import InvalidObjectException, get_cls
 from core.database.permissions import PermissionsManager
 from core.manager import BaseManager
 from sqlalchemy.exc import IntegrityError
-from core.plugins.models import DuplicateRecord
+from core.plugins.lib.models import DuplicateRecord
 from realize.log import logging
 
 log = logging.getLogger(__name__)
@@ -139,6 +139,7 @@ class DBManager(BaseManager):
     def translate_object(self, obj):
         has_perm = self.perm_manager.check_perms(obj, "view")
         if not has_perm:
+            log.info("Incorrect permissions.")
             return None
 
         tp = self.lookup_plugin_model(obj)()
@@ -214,7 +215,7 @@ class DBManager(BaseManager):
         return self.query_filter(TimePoint, plugin_proxy, metric_proxy, first=True, **kwargs)
 
     def get_query_class(self, obj):
-        from core.plugins.models import TimePointBase, BlobBase
+        from core.plugins.lib.models import TimePointBase, BlobBase
         if isinstance(obj, TimePointBase):
             query_cls = TimePoint
         else:

@@ -1,4 +1,4 @@
-from core.plugins.proxies import PluginProxy
+from core.plugins.lib.proxies import PluginProxy
 
 NAME = "github"
 HASHKEY = "github1"
