@@ -1,8 +1,10 @@
-from flask import Blueprint,  request, url_for, session, render_template
+from flask import Blueprint,  request, url_for, session, render_template, jsonify
 from flask.ext.login import current_user
 from flask.ext.security import login_required
+from flask.views import MethodView
 from flask_oauthlib.client import OAuth
 import os
+from core.util import append_container, DEFAULT_SECURITY
 from realize import settings
 from core.oauth.base import OauthBase
 
@@ -39,20 +41,32 @@ for handler in oauth_handlers:
         if auth.handler == handler:
             obj = auth(handler_obj)
 
-            login = getattr(obj, "login")
-            auth_handler = authorized_handler(login_required(getattr(obj, "authorized")))
+            login = DEFAULT_SECURITY(getattr(obj, "login"))
+            auth_handler = authorized_handler(DEFAULT_SECURITY(getattr(obj, "authorized")))
             token = token_getter(getattr(obj, "token"))
             handlers[handler] = handler_obj
             oauth_views.add_url_rule(login_url, login_route_name, view_func=login)
             oauth_views.add_url_rule(authorize_url, auth_route_name, view_func=auth_handler)
 
-@login_required
-@oauth_views.route("/oauth")
-def oauth_accounts():
-    auth = current_user.authorizations
-    current_auth = {}
-    for a in auth:
-        current_auth[a.name] = auth
-    all_logins = login_urls
+class Authorizations(MethodView):
+    decorators = [DEFAULT_SECURITY]
 
-    return render_template("oauth.html", current_auth=current_auth, all_logins=all_logins)
+    def get(self):
+        auth = current_user.authorizations
+        current_auth = {}
+        for a in auth:
+            current_auth[a.name] = auth
+        all_logins = login_urls
+
+        auth_schema = []
+        for l in all_logins:
+            auth_scheme = dict(
+                url=all_logins[l],
+                name=l,
+                active=(l in current_auth)
+            )
+            auth_schema.append(auth_scheme)
+
+        return jsonify(append_container(auth_schema, name="authorizations", tags=["system"]))
+
+oauth_views.add_url_rule('/authorizations', view_func=Authorizations.as_view('authorizations'))

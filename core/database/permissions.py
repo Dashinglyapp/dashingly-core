@@ -55,6 +55,8 @@ class PermissionsManager(BaseManager):
         plugin_cls = plugins[plugin.hashkey]
         plugin_model_cls = None
         for m in plugin_cls.models:
+            if not hasattr(obj, "plugin_model") or obj.plugin_model is None:
+                return False
             if m.plugin_model_proxy.hashkey == obj.plugin_model.hashkey:
                 plugin_model_cls = m
 
@@ -153,5 +155,3 @@ class PermissionsManager(BaseManager):
                 return False
 
         return False
-
-

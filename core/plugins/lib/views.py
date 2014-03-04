@@ -4,6 +4,8 @@ class BaseView(object):
     name = None
     manager = None
     path = None
+    children = []
+    tags = ["view"]
 
     def __init__(self, **kwargs):
         for k in kwargs:
@@ -27,32 +29,50 @@ class BaseView(object):
 class WidgetView(BaseView):
     name = None
     description = None
-    widgets = {}
+    hashkey = None
+    path = None
+    children = []
+    tags = ["widget"]
 
     def get(self, data):
-        widget = data.get('widget', None)
-        if widget is None:
-            return self.schema()
+        data = self.to_json(data)
+        meta = self.__class__.meta()
+        meta.update({
+            'data': data
+        })
+        return meta
 
-        widget_obj = self.widgets[widget]
-        widget_obj.manager = self.manager
-        return widget_obj.to_json(data)
-
-    def schema(self):
+    @classmethod
+    def meta(cls):
         return {
-            'widgets': self.widgets.keys()
+            'tree': cls.tree(),
+            'name': cls.name,
+            'description': cls.description,
+            'hashkey': cls.hashkey,
+            'url': cls.path,
+            'tags': cls.tags
         }
 
+    def post(self, data):
+        raise NotImplementedError()
 
-class BaseWidget(object):
-    manager = None
-    name = None
-    description = None
+    def save(self, **kwargs):
+        raise NotImplementedError()
 
-    def __init__(self, name, description, **kwargs):
-        self.name = name
-        for k in kwargs:
-            setattr(self, k, kwargs[k])
+    @classmethod
+    def tree(cls):
+        widgets = []
+        for w in cls.children:
+            widgets.append(dict(
+                description=w.description,
+                name=w.name,
+                hashkey=w.hashkey,
+                url=w.path
+            ))
+        return widgets
+
+    def to_json(self, data):
+        return {}
 
 class LineDescriptor(object):
     def __init__(self, type, label, description, name, data):
@@ -62,9 +82,10 @@ class LineDescriptor(object):
         self.data = data
         self.name = name
 
-class ChartWidget(BaseWidget):
+class ChartWidget(WidgetView):
     name = None
     description = None
+    tags = ["widget", "chart"]
 
     def get_chart_points(self, data):
         raise NotImplementedError()
@@ -74,8 +95,6 @@ class ChartWidget(BaseWidget):
         return {
             'x': chart_points['x'].__dict__,
             'y': [y.__dict__ for y in chart_points['y']],
-            'name': self.name,
-            'description': self.description,
         }
 
 class ModelChartWidget(ChartWidget):
@@ -92,7 +111,7 @@ class ModelChartWidget(ChartWidget):
     def get_chart_points(self, data):
         start = data.get('start', None)
         end = data.get('end', None)
-        data = self.manager.query_object_range("date", self.model, start=start, end=end)
+        data = self.manager.query_class_range("date", self.model, start=start, end=end)
         x_points = [getattr(d, self.x_data_field) for d in data]
         y_points = [getattr(d, self.y_data_field) for d in data]
 

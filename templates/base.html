@@ -33,15 +33,13 @@
                     {% set login = url_for('security.login') %}
                     {% set register = url_for('security.register') %}
                     {% set manage_plugins = url_for('main_views.manage_plugins') %}
-                    {% set metrics = url_for('main_views.metrics') %}
-                    {% set forms = url_for('main_views.forms') %}
-                    {% set accounts = url_for('oauth_views.oauth_accounts') %}
+                    {% set views = url_for('main_views.views') %}
+                    {% set authorizations = url_for('oauth_views.authorizations') %}
                     <ul class="nav navbar-nav">
                         <li {% if request.path == index %}class="active"{% endif %}><a href="{{ index }}">Home</a></li>
                         {% if current_user.is_authenticated() %}
-                            <li {% if request.path == metrics %}class="active"{% endif %}><a href="{{ metrics }}">Metrics</a></li>
-                            <li {% if request.path == forms %}class="active"{% endif %}><a href="{{ forms }}">Forms</a></li>
-                            <li {% if request.path == accounts %}class="active"{% endif %}><a href="{{ accounts }}">Accounts</a></li>
+                            <li {% if request.path == views %}class="active"{% endif %}><a href="{{ views }}">Views</a></li>
+                            <li {% if request.path == authorizations %}class="active"{% endif %}><a href="{{ authorizations }}">Accounts</a></li>
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">Signed in as {{ current_user.email }} <b class="caret"></b></a>
                                 <ul class="dropdown-menu">

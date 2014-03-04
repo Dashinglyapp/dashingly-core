@@ -5,6 +5,8 @@ from core.database.manager import DBManager
 from app import db
 from core.plugins.lib.base import BasePlugin
 from core.manager import ExecutionContext
+from core.plugins.views import ViewManager
+
 
 class PluginLoader():
     def __init__(self, path):
@@ -26,11 +28,13 @@ def load_plugins():
     from realize import settings
     context = ExecutionContext()
     manager = DBManager(context, session=db.session)
+    view_manager = ViewManager(context, manager=manager)
     for plugin in PluginLoader(settings.PLUGIN_PATH):
         # Store plugins in a dictionary for later access.
         plugins[plugin.hashkey] = plugin
         # Register all plugins and create a DB entry as needed.
         manager.register_plugin(plugin)
+        view_manager.set_hashkeys(plugin)
     db.session.commit()
     return plugins
 
