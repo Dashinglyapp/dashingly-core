@@ -2,8 +2,7 @@ from core.plugins.lib.base import BasePlugin
 from core.plugins.lib.proxies import MetricProxy
 from core.plugins.lib.permissions import AuthorizationPermission
 from plugins.test.models import MoodModel, DataModel, SettingsModel
-from plugins.test.forms import SurveyForm, MoodForm, SettingsForm
-from plugins.test.views import GetStuffView
+from plugins.test.views import GetStuffView, SettingsForm
 from datetime import datetime
 from plugins.test import manifest
 
@@ -11,7 +10,6 @@ class TestPlugin(BasePlugin):
     name = manifest.NAME
     description = manifest.DESCRIPTION
     models = [MoodModel, DataModel, SettingsModel]
-    forms = [SurveyForm, MoodForm]
     settings_form = SettingsForm
     views = [GetStuffView]
     hashkey = manifest.HASHKEY
@@ -28,15 +26,3 @@ class TestPlugin(BasePlugin):
 
     def destroy(self):
         pass
-
-    def save_forms(self, metric, **kwargs):
-        if SurveyForm.metric_proxy.name == metric.name:
-            form = SurveyForm(**kwargs)
-            if form.validate():
-                data = DataModel(date=datetime.utcnow(), text=form.text.data, number=form.number.data)
-                self.manager.add(data)
-        elif MoodForm.metric_proxy.name == metric.name:
-            form = MoodForm(**kwargs)
-            if form.validate():
-                data = MoodModel(date=datetime.utcnow(), data=form.number.data)
-                self.manager.add(data)

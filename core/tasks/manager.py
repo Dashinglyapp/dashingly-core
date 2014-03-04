@@ -13,7 +13,7 @@ class TaskManager(BaseManager):
         return manager.lookup_plugin(plugin_key)
 
     def setup_task(self, task_cls):
-        manager = self.get_manager_for_context()
+        manager = self.get_manager_from_context()
         plugin = self.lookup_plugin(self.plugin.hashkey)
         context = ExecutionContext(user=self.user, plugin=plugin, group=self.group)
         auth_manager = AuthorizationManager(context)

@@ -1,5 +1,10 @@
+from flask.ext.login import current_user
+from flask.ext.security import auth_required
+
 class InvalidObjectException(Exception):
     pass
+
+DEFAULT_SECURITY = auth_required('token', 'session')
 
 def get_cls(session, cls, obj, attrs=None, create=False):
     if attrs is None:
@@ -20,3 +25,11 @@ def get_cls(session, cls, obj, attrs=None, create=False):
         raise InvalidObjectException()
 
     return val
+
+def append_container(data, name=None, tags=None, code=200):
+    return {
+        'name': name,
+        'tags': tags,
+        'modules': data,
+        'meta': {'code': code}
+    }

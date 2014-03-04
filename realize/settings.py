@@ -53,6 +53,9 @@ OAUTH_CONFIG = {
     }
 }
 
+MAX_TOKEN_AGE = 7 * 24 * 60 * 60 # seconds
+VIEW_HASHKEY_LENGTH = 20
+
 try:
     from realize.private import *
 except:

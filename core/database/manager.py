@@ -216,19 +216,21 @@ class DBManager(BaseManager):
 
     def get_query_class(self, obj):
         from core.plugins.lib.models import TimePointBase, BlobBase
-        if isinstance(obj, TimePointBase):
+        if issubclass(obj, TimePointBase):
             query_cls = TimePoint
-        else:
+        elif issubclass(obj, BlobBase):
             query_cls = Blob
+        else:
+            raise InvalidObjectException()
         return query_cls
 
-    def query_object_filter(self, obj, **kwargs):
-        query_cls = self.get_query_class(obj)
-        return self.query_filter(query_cls, plugin_model_proxy=obj.plugin_model_proxy, **kwargs)
+    def query_class_filter(self, cls, **kwargs):
+        query_cls = self.get_query_class(cls)
+        return self.query_filter(query_cls, plugin_model_proxy=cls.plugin_model_proxy, **kwargs)
 
-    def query_object_range(self, query_column, obj, start=None, end=None):
-        query_cls = self.get_query_class(obj)
-        return self.query_range(query_column, query_cls, plugin_model_proxy=obj.plugin_model_proxy, start=start, end=end)
+    def query_class_range(self, query_column, cls, start=None, end=None):
+        query_cls = self.get_query_class(cls)
+        return self.query_range(query_column, query_cls, plugin_model_proxy=cls.plugin_model_proxy, start=start, end=end)
 
     def register_plugin(self, plugin_cls):
         plugin_proxy = PluginProxy(name=plugin_cls.name, hashkey=plugin_cls.hashkey)

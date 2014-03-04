@@ -1,3 +1,5 @@
+from flask.ext.login import current_user
+from core.plugins.views import ViewManager
 from core.util import get_cls
 from core.manager import BaseManager, ExecutionContext
 from flask import jsonify
@@ -12,45 +14,38 @@ class PluginManager(BaseManager):
     def list(self):
         return self.user.plugins
 
-    def get_plugin(self, plugin_hashkey):
-        from core.plugins.loader import plugins
-        plugin_cls = plugins[plugin_hashkey]
-        return plugin_cls
+    def call_view_handler(self, path, method, data):
+        context = ExecutionContext(plugin=self.plugin, user=current_user)
+        view_manager = ViewManager(context)
+        return view_manager.handle_route(path, method, data)
+
+    def call_form_handler(self, path, method, data):
+        plugin_cls = self.get_plugin(self.plugin.hashkey)
+        for form_cls in plugin_cls.forms:
+            if form_cls.name == path:
+                manager = self.get_manager_from_hashkey(self.plugin.hashkey)
+                form = form_cls(**data)
+                form.context = self.context
+                form.manager = manager
+                func = getattr(form, method)
+                return jsonify(func())
+
+        raise InvalidRouteException()
 
     def call_route_handler(self, path, method, data):
-        plugin_cls = self.get_plugin(self.plugin.hashkey)
-        for view_cls in plugin_cls.views:
-            widget = None
-            path_start = (path.startswith(view_cls.path) and not view_cls.path == path)
-            if path_start:
-                widget = path.split("/")[-1]
-
-            data_copy = data.copy()
-            data_copy['widget'] = widget
-            if view_cls.path == path or path_start:
-                manager = self.get_manager(self.plugin.hashkey)
-                view = view_cls(context=self.context, manager=manager)
-                func = getattr(view, method)
-                return func(data_copy)
+        if path.startswith("views/"):
+            path = path[6:]
+            return self.call_view_handler(path, method, data)
 
         raise InvalidRouteException()
 
     def run_actions(self, plugin_hashkey, action_name, **kwargs):
         plugin_cls = self.get_plugin(plugin_hashkey)
-        manager = self.get_manager(plugin_hashkey)
+        manager = self.get_manager_from_hashkey(plugin_hashkey)
         context = ExecutionContext(plugin=self.lookup_plugin(plugin_hashkey), user=self.user)
         plugin = plugin_cls(context, manager)
         func = getattr(plugin, action_name)
         return func(**kwargs)
-
-    def get_manager(self, plugin_hashkey):
-        from app import db
-        from core.database.manager import DBManager
-
-        plugin = self.lookup_plugin(plugin_hashkey)
-        context = ExecutionContext(user=self.user, plugin=plugin, group=self.group)
-        manager = DBManager(context, session=db.session)
-        return manager
 
     def add(self, plugin_hashkey):
         from app import db
@@ -94,13 +89,9 @@ class PluginManager(BaseManager):
                     self.user.sources.remove(source)
         db.session.commit()
 
-    def save_form(self, plugin_hashkey, metric_name, **kwargs):
-        from lib.proxies import MetricProxy
-        return self.run_actions(plugin_hashkey, "save_forms", metric=MetricProxy(name=metric_name), **kwargs)
-
     def get_settings(self, plugin_hashkey, data):
         plugin_cls = self.get_plugin(plugin_hashkey)
-        manager = self.get_manager(plugin_hashkey)
+        manager = self.get_manager_from_hashkey(plugin_hashkey)
         if plugin_cls.settings_form is None:
             return jsonify({})
 
