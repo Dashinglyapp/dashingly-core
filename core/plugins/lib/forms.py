@@ -8,22 +8,15 @@ class JSONMixin(object):
         form = {}
         form['csrf_token'] = self.generate_csrf_token()
         fields = []
-        for f in self:
-            field = dict(
-                name=f.name,
-                short_name=f.short_name,
-                id=f.id,
-                label=f.label,
-                default=f.default,
-                description=f.description,
-                errors=f.errors,
-                type=f.type,
-                flags=f.flags.__dict__,
-                data=f.data,
-                raw_data=f.raw_data,
-                widget=f.widget.__dict__,
-                object_data=f.object_data
-            )
+        for f in self._fields:
+            f_obj = self._fields[f]
+            field = f_obj.__dict__.copy()
+            field['errors'] = f_obj.errors
+            field['widget'] = f_obj.widget.input_type
+            del field['_translations']
+            del field['validators']
+            field['flags'] = field['flags'].__dict__
+            field['label'] = field['label'].__dict__
             fields.append(field)
         form['fields'] = fields
         return form
@@ -40,16 +33,17 @@ class FormWidget(Form, WidgetView, JSONMixin):
         return self.as_json()
 
     def post(self, data):
-        return self.save(data)
+        if self.validate():
+            self.save(data)
+            return {'status': 200}
+
+        return self.errors
 
     def save(self, data):
-        if self.validate():
-            mod = self.model(**data)
-            mod.date = datetime.utcnow()
-            self.manager.add(mod)
-            return {'status': 200}
-        else:
-            return self._errors
+        mod = self.model(**data)
+        mod.date = datetime.utcnow()
+        self.manager.add(mod)
+
 
 class SettingsFormWidget(FormWidget):
     def save(self, data):

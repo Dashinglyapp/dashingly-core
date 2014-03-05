@@ -212,25 +212,6 @@ class Data(db.Model):
     def __repr__(self):
         return "<Data(plugin='%s', metric='%s')>" % (self.plugin_id, self.metric_id)
 
-class TimePoint(Data):
-    __tablename__ = 'timepoints'
-    __mapper_args__ = {
-        'polymorphic_identity':'timepoints',
-        }
-
-    id = db.Column(db.Integer, db.ForeignKey('data.id'), primary_key=True)
-    data = db.Column(db.String(STRING_MAX))
-
-    user = db.relationship("User", backref=db.backref('timepoints', order_by=id))
-    group = db.relationship("Group", backref=db.backref('timepoints', order_by=id))
-    plugin = db.relationship("Plugin", backref=db.backref('timepoints', order_by=id))
-    plugin_model = db.relationship("PluginModel", backref=db.backref('timepoints', order_by=id))
-    metric = db.relationship("Metric", backref=db.backref('timepoints', order_by=id))
-    source = db.relationship("Source", backref=db.backref('timepoints', order_by=id))
-
-    def __repr__(self):
-        return "<TimePoints(plugin='%s', metric='%s', data='%s')>" % (self.plugin_id, self.metric_id, self.data)
-
 class Blob(Data):
     __tablename__ = 'blobs'
     __mapper_args__ = {
@@ -268,7 +249,6 @@ def add_hashkey(mapper, connection, target):
     target.hashkey = make_hash([getattr(target, k) for k in target.hash_vals])
 
 # Register hashkey adding events.
-event.listen(TimePoint, "before_insert", add_hashkey)
 event.listen(Blob, "before_insert", add_hashkey)
 event.listen(PluginModel, "before_insert", add_hashkey)
 event.listen(User, "before_insert", add_hashkey)

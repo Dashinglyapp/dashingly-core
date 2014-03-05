@@ -14,7 +14,7 @@ class ScrapeTask(TaskBase):
 
     def run(self):
 
-        last_m = self.manager.query_blob_last(manifest.plugin_proxy, MetricProxy(name="commits"))
+        last_m = self.manager.query_last(manifest.plugin_proxy, MetricProxy(name="commits"))
         if last_m is None:
             last_time = datetime.now().replace(tzinfo=pytz.utc) - timedelta(days=365)
         else:
@@ -57,7 +57,7 @@ class ScrapeTask(TaskBase):
                 date = c['commit']['author']['date']
                 date_obj = parser.parse(date)
                 date_obj = date_obj.replace(hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
-                daily_commits = DailyCommits(date=date_obj, data=0)
+                daily_commits = DailyCommits(date=date_obj, count=0)
                 commits = self.manager.get_or_create(daily_commits)
-                commits.data += 1
+                commits.count += 1
                 self.manager.update(commits)

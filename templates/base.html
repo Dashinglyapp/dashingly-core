@@ -29,9 +29,9 @@
                 </div>
                 <div class="navbar-collapse collapse" id="collapse-bar">
                     {% set index = url_for('main_views.index') %}
-                    {% set logout = url_for('security.logout') %}
-                    {% set login = url_for('security.login') %}
-                    {% set register = url_for('security.register') %}
+                    {% set logout = url_for('main_views.logout') %}
+                    {% set login = url_for('main_views.login') %}
+                    {% set register = url_for('main_views.register') %}
                     {% set manage_plugins = url_for('main_views.manage_plugins') %}
                     {% set views = url_for('main_views.views') %}
                     {% set authorizations = url_for('oauth_views.authorizations') %}

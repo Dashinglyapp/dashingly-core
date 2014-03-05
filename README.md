@@ -16,7 +16,7 @@ Then type:
 vagrant up
 ```
 
-Get some food. You have time. An hour or so later it should finish.
+This should take 15-20 minutes to download and install dependencies on newer machines.
 
 Then type:
 
@@ -171,14 +171,18 @@ You will receieve an auth token:
 API Endpoint Listing
 ---------------------------------------------
 
+## API Versions
+
+The current api version is one.  Please prefix all URLs with `/api/v1`.
+
 ## Top level
 
-`/login` GET request will get the login form, POST to login and get an auth token.
-`/register` GET will get the signup form, POST to register and get an auth token.
-`/logout` GET will logout.
-`/views` GET will get a listing of all the views available.  This will include URLs for individual widgets.
-`/authorizations` GET will show a listing of all available authorization methods and a url to send the user to to complete them.
-`/plugins/manage` GET will show a listing of all plugins
+* `/login` GET request will get the login form, POST to login and get an auth token.
+* `/register` GET will get the signup form, POST to register and get an auth token.
+* `/logout` GET will logout.
+* `/views` GET will get a listing of all the views available.  This will include URLs for individual widgets.
+* `/authorizations` GET will show a listing of all available authorization methods and a url to send the user to to complete them.
+* `/plugins/manage` GET will show a listing of all plugins
 
 ## Second level
 

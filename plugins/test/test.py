@@ -15,11 +15,11 @@ class TestPlugin(BasePlugin):
     hashkey = manifest.HASHKEY
 
     def setup(self):
-        moods = self.manager.query_time_filter(manifest.plugin_proxy, MetricProxy(name="mood"))
+        moods = self.manager.query_filter(manifest.plugin_proxy, MetricProxy(name="mood"))
         if len(moods) == 0:
-            mood = MoodModel(data=1, date=datetime.utcnow())
+            mood = MoodModel(score=1, date=datetime.utcnow())
             self.manager.add(mood)
-        data = self.manager.query_blob_filter(manifest.plugin_proxy, MetricProxy(name="data"))
+        data = self.manager.query_filter(manifest.plugin_proxy, MetricProxy(name="data"))
         if len(data) == 0:
             data = DataModel(date=datetime.utcnow(), text="This is some text.", number=1)
             self.manager.add(data)

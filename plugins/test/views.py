@@ -1,4 +1,5 @@
-from wtforms import IntegerField, TextField
+from wtforms import IntegerField, TextField, SelectField
+from wtforms.validators import required
 from core.plugins.lib.forms import FormWidget, SettingsFormWidget
 from core.plugins.lib.proxies import MetricProxy, SourceProxy
 from core.plugins.lib.views import WidgetView, ModelChartWidget
@@ -12,7 +13,7 @@ class MoodForm(FormWidget):
     metric_proxy = MetricProxy(name="mood")
     source_proxy = SourceProxy(name="self")
 
-    data = IntegerField(description="Number on a 1-10 scale.")
+    data = IntegerField('Mood', [required()], description="Number on a 1-10 scale.")
 
 class SurveyForm(FormWidget):
     name = "survey"

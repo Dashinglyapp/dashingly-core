@@ -2,8 +2,8 @@ from core.plugins.lib.fields import IntegerField
 from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from core.tests.base import RealizeTest
 from core.tests.util import get_manager
-from core.tests.factories import UserFactory, PluginFactory, TimePointFactory, BlobFactory, MetricFactory, SourceFactory, PluginModelFactory
-from core.plugins.lib.models import TimePointBase, BlobBase
+from core.tests.factories import UserFactory, PluginFactory, BlobFactory, MetricFactory, SourceFactory, PluginModelFactory
+from core.plugins.lib.models import BlobBase
 from core.plugins.lib.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
 from realize.log import logging
 from core.tests.base import db
@@ -12,17 +12,13 @@ from core.plugins.lib.base import BasePlugin
 
 log = logging.getLogger(__name__)
 
-class TestTimeModel(TimePointBase):
-    metric_proxy = MetricProxy(name="test")
-    source_proxy = SourceProxy(name="test")
-
 class TestBlobModel(BlobBase):
     metric_proxy = MetricProxy(name="test1")
     source_proxy = SourceProxy(name='test1')
 
     number = IntegerField()
 
-class TestLoosePermissions(TimePointBase):
+class TestLoosePermissions(BlobBase):
     metric_proxy = MetricProxy(name="test2")
     source_proxy = SourceProxy(name="test2")
     perms = [Scope(ZonePerm("user", all=True), BlockPerm("plugin", all=True))]
@@ -30,14 +26,14 @@ class TestLoosePermissions(TimePointBase):
 class TestPlugin(BasePlugin):
     name = "test"
     hashkey = "1"
-    models = [TestTimeModel, TestBlobModel, TestLoosePermissions]
+    models = [TestBlobModel, TestLoosePermissions]
 
 class DatabaseTest(RealizeTest):
     plugin_classes = [TestPlugin]
 
     def run_query_assert(self, obj, plugin, times_len, user=None):
         manager = get_manager(plugin, db.session, user=user)
-        times = manager.query_time_filter(obj.plugin_proxy, obj.metric_proxy)
+        times = manager.query_filter(obj.plugin_proxy, obj.metric_proxy)
         self.assertEqual(len(times), times_len)
 
     def test_manager(self):
@@ -45,7 +41,7 @@ class DatabaseTest(RealizeTest):
         bad_user = UserFactory()
         bad_plugin = PluginFactory()
 
-        t_obj = TestTimeModel()
+        t_obj = TestBlobModel()
         manager.add(t_obj)
 
         # We are the wrong user and plugin, so we don't have permissions for this yet.
@@ -76,5 +72,5 @@ class DatabaseTest(RealizeTest):
         manager.add(obj)
 
         # We have created the object, so querying for it should give us the first instance.
-        data = manager.query_blob_first(obj.plugin_proxy, obj.metric_proxy)
+        data = manager.query_first(obj.plugin_proxy, obj.metric_proxy)
         self.assertTrue(isinstance(data, TestBlobModel))

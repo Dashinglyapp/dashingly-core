@@ -22,7 +22,10 @@ class ViewManager(BaseManager):
             view = views[i]
             view.hashkey = hashlib.sha224("{0}{1}".format(plugin.hashkey, view.name)).hexdigest()[:VIEW_HASHKEY_LENGTH]
             view_route = "views/{0}".format(view.hashkey)
-            plugin_path = url_for('plugin_views.plugin_route', plugin_hashkey=plugin.hashkey, plugin_route=view_route)
+
+            # Cannot use url_for here, because it needs to be called in celery tasks, and celery doesn't have a request to use
+            # to make a URL.  Could fix by specifying server_name, but that seems to heavyweight for now.
+            plugin_path = '/api/v1/plugins/{0}/{1}'.format(plugin.hashkey, view_route)
             view.path = plugin_path
             view_dict[view.hashkey] = view
         plugin.view_dict = view_dict

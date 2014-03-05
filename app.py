@@ -58,7 +58,6 @@ def token_loader(token):
 app = create_app()
 oauth = OAuth(app)
 csrf = CsrfProtect(app)
-
 babel = Babel(app)
 celery = make_celery(app)
 

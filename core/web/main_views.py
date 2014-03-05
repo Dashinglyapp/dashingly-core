@@ -45,7 +45,7 @@ class ManagePlugins(MethodView):
 
         return jsonify(append_container(plugin_schema, name="plugin_list", tags=["system"]))
 
-main_views.add_url_rule('/plugins/manage', view_func=ManagePlugins.as_view('manage_plugins'))
+main_views.add_url_rule('/api/v1/plugins/manage', view_func=ManagePlugins.as_view('manage_plugins'))
 
 class PluginViews(MethodView):
     decorators = [DEFAULT_SECURITY]
@@ -64,12 +64,12 @@ class PluginViews(MethodView):
 
         return jsonify(append_container(user_widgets, name="widgets", tags=[]))
 
-main_views.add_url_rule('/views', view_func=PluginViews.as_view('views'))
+main_views.add_url_rule('/api/v1/views', view_func=PluginViews.as_view('views'))
 
 class JSONLoginForm(LoginForm, JSONMixin):
     pass
 
-@main_views.route('/login', methods=["GET", "POST"])
+@main_views.route('/api/v1/login', methods=["GET", "POST"])
 @anonymous_user_required
 def login():
     """
@@ -96,7 +96,7 @@ _security = LocalProxy(lambda: current_app.extensions['security'])
 class JSONRegisterForm(ConfirmRegisterForm, JSONMixin):
     pass
 
-@main_views.route('/register', methods=["GET", "POST"])
+@main_views.route('/api/v1/register', methods=["GET", "POST"])
 @anonymous_user_required
 def register():
     """
@@ -117,7 +117,7 @@ def register():
 
     return jsonify(form.as_json())
 
-@main_views.route('/logout', methods=["GET", "POST"])
+@main_views.route('/api/v1/logout', methods=["GET", "POST"])
 def logout():
     """
     View function which handles a logout request.

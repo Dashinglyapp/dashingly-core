@@ -1,4 +1,4 @@
-from core.database.models import TimePoint, Blob
+from core.database.models import Blob
 
 class MetricProxy(object):
     def __init__(self, name):

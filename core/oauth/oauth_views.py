@@ -69,4 +69,4 @@ class Authorizations(MethodView):
 
         return jsonify(append_container(auth_schema, name="authorizations", tags=["system"]))
 
-oauth_views.add_url_rule('/authorizations', view_func=Authorizations.as_view('authorizations'))
+oauth_views.add_url_rule('/api/v1/authorizations', view_func=Authorizations.as_view('authorizations'))

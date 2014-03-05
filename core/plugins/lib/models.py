@@ -1,4 +1,4 @@
-from core.database.models import TimePoint, Blob
+from core.database.models import Blob
 from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from fields import Field, FloatField, DictField, DateTimeField, IntegerField
 import json
@@ -37,16 +37,6 @@ class ModelBase(object):
                 fields_list.append(prop)
         return fields_list
 
-class TimePointBase(ModelBase):
-    model_cls = TimePoint
-    data = Field()
-
-    def get_data(self):
-        return self.data
-
-    def set_data(self, data):
-        self.data = data
-
 class BlobBase(ModelBase):
     model_cls = Blob
 
@@ -70,7 +60,10 @@ class BlobBase(ModelBase):
         return json.dumps(data)
 
     def set_data(self, data):
-        data = json.loads(data)
+        try:
+            data = json.loads(data)
+        except:
+            data = {}
 
         for f in self.get_fields():
             if f in data:

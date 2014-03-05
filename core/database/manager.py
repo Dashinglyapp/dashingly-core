@@ -1,4 +1,4 @@
-from models import Metric, Source, Plugin, TimePoint, Blob, PluginModel
+from models import Metric, Source, Plugin, Blob, PluginModel
 from core.plugins.lib.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
 from core.util import InvalidObjectException, get_cls
 from core.database.permissions import PermissionsManager
@@ -34,7 +34,7 @@ class DBManager(BaseManager):
         data = obj.get_data()
 
         metric = get_cls(self.session, Metric, obj.metric_proxy)
-        source = get_cls(self.session, Source, obj.source_proxy)
+        source = get_cls(self.session, Source, obj.source_proxy, create=True)
 
         attribs = {
             'source': source,
@@ -104,7 +104,7 @@ class DBManager(BaseManager):
             mod.data = obj.get_data()
         return obj
 
-    def _query_base(self, plugin_proxy=None, metric_proxy=None, query_cls=TimePoint, plugin_model_proxy=None):
+    def _query_base(self, plugin_proxy=None, metric_proxy=None, query_cls=Blob, plugin_model_proxy=None):
         query = self.session.query(query_cls).order_by("date")
         if self.user is not None:
             query = query.filter(getattr(query_cls, "user") == self.user)
@@ -161,7 +161,7 @@ class DBManager(BaseManager):
                 tps.append(translation)
         return tps
 
-    def query_range(self, query_column, model_cls, plugin_proxy=None, metric_proxy=None, start=None, end=None, plugin_model_proxy=None):
+    def _query_range(self, query_column, model_cls, plugin_proxy=None, metric_proxy=None, start=None, end=None, plugin_model_proxy=None):
         query = self._query_base(plugin_proxy, metric_proxy, query_cls=model_cls, plugin_model_proxy=plugin_model_proxy)
         if start is not None:
             query = query.filter(getattr(model_cls, query_column) >= start)
@@ -170,7 +170,7 @@ class DBManager(BaseManager):
 
         return self.translate_objects(query.all())
 
-    def query_filter(self, model_cls, plugin_proxy=None, metric_proxy=None, plugin_model_proxy=None, first=False, last=False, **kwargs):
+    def _query_filter(self, model_cls, plugin_proxy=None, metric_proxy=None, plugin_model_proxy=None, first=False, last=False, **kwargs):
         query = self._query_base(plugin_proxy, metric_proxy, query_cls=model_cls, plugin_model_proxy=plugin_model_proxy)
         for attr, value in kwargs.items():
             query = query.filter(getattr(model_cls, attr) == value)
@@ -190,35 +190,21 @@ class DBManager(BaseManager):
 
         return self.translate_objects(query.all())
 
-    def query_time_range(self, query_column, plugin_proxy=None, metric_proxy=None, start=None, end=None):
-        return self.query_range(query_column, TimePoint, plugin_proxy, metric_proxy, start, end)
+    def query_range(self, query_column, plugin_proxy=None, metric_proxy=None, start=None, end=None):
+        return self._query_range(query_column, Blob, plugin_proxy, metric_proxy, start, end)
 
-    def query_time_filter(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(TimePoint, plugin_proxy, metric_proxy, **kwargs)
+    def query_filter(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self._query_filter(Blob, plugin_proxy, metric_proxy, **kwargs)
 
-    def query_blob_range(self, query_column, plugin_proxy=None, metric_proxy=None, start=None, end=None):
-        return self.query_range(query_column, Blob, plugin_proxy, metric_proxy, start, end)
+    def query_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self._query_filter(Blob, plugin_proxy, metric_proxy, last=True, **kwargs)
 
-    def query_blob_filter(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(Blob, plugin_proxy, metric_proxy, **kwargs)
-
-    def query_blob_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(Blob, plugin_proxy, metric_proxy, last=True, **kwargs)
-
-    def query_blob_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(Blob, plugin_proxy, metric_proxy, first=True, **kwargs)
-
-    def query_time_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(TimePoint, plugin_proxy, metric_proxy, last=True, **kwargs)
-
-    def query_time_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(TimePoint, plugin_proxy, metric_proxy, first=True, **kwargs)
+    def query_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self._query_filter(Blob, plugin_proxy, metric_proxy, first=True, **kwargs)
 
     def get_query_class(self, obj):
-        from core.plugins.lib.models import TimePointBase, BlobBase
-        if issubclass(obj, TimePointBase):
-            query_cls = TimePoint
-        elif issubclass(obj, BlobBase):
+        from core.plugins.lib.models import BlobBase
+        if issubclass(obj, BlobBase):
             query_cls = Blob
         else:
             raise InvalidObjectException()
@@ -226,11 +212,11 @@ class DBManager(BaseManager):
 
     def query_class_filter(self, cls, **kwargs):
         query_cls = self.get_query_class(cls)
-        return self.query_filter(query_cls, plugin_model_proxy=cls.plugin_model_proxy, **kwargs)
+        return self._query_filter(query_cls, plugin_model_proxy=cls.plugin_model_proxy, **kwargs)
 
     def query_class_range(self, query_column, cls, start=None, end=None):
         query_cls = self.get_query_class(cls)
-        return self.query_range(query_column, query_cls, plugin_model_proxy=cls.plugin_model_proxy, start=start, end=end)
+        return self._query_range(query_column, query_cls, plugin_model_proxy=cls.plugin_model_proxy, start=start, end=end)
 
     def register_plugin(self, plugin_cls):
         plugin_proxy = PluginProxy(name=plugin_cls.name, hashkey=plugin_cls.hashkey)

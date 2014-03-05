@@ -63,12 +63,7 @@ class WidgetView(BaseView):
     def tree(cls):
         widgets = []
         for w in cls.children:
-            widgets.append(dict(
-                description=w.description,
-                name=w.name,
-                hashkey=w.hashkey,
-                url=w.path
-            ))
+            widgets.append(w.meta())
         return widgets
 
     def to_json(self, data):
