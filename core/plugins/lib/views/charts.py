@@ -1,73 +1,5 @@
-from fields import DataTypes
-
-class BaseView(object):
-    name = None
-    manager = None
-    path = None
-    children = []
-    tags = ["view"]
-
-    def __init__(self, **kwargs):
-        for k in kwargs:
-            setattr(self, k, kwargs[k])
-
-    def get(self, data):
-        raise NotImplementedError()
-
-    def post(self, data):
-        raise NotImplementedError()
-
-    def delete(self, data):
-        raise NotImplementedError
-
-    def put(self, data):
-        raise NotImplementedError()
-
-    def patch(self, data):
-        raise NotImplementedError()
-
-class WidgetView(BaseView):
-    name = None
-    description = None
-    hashkey = None
-    path = None
-    children = []
-    tags = ["widget"]
-
-    def get(self, data):
-        data = self.to_json(data)
-        meta = self.__class__.meta()
-        meta.update({
-            'data': data
-        })
-        return meta
-
-    @classmethod
-    def meta(cls):
-        return {
-            'tree': cls.tree(),
-            'name': cls.name,
-            'description': cls.description,
-            'hashkey': cls.hashkey,
-            'url': cls.path,
-            'tags': cls.tags
-        }
-
-    def post(self, data):
-        raise NotImplementedError()
-
-    def save(self, **kwargs):
-        raise NotImplementedError()
-
-    @classmethod
-    def tree(cls):
-        widgets = []
-        for w in cls.children:
-            widgets.append(w.meta())
-        return widgets
-
-    def to_json(self, data):
-        return {}
+from core.plugins.lib.views.base import View
+from core.plugins.lib.fields import DataTypes
 
 class LineDescriptor(object):
     def __init__(self, type, label, description, name, data):
@@ -77,10 +9,10 @@ class LineDescriptor(object):
         self.data = data
         self.name = name
 
-class ChartWidget(WidgetView):
+class ChartView(View):
     name = None
     description = None
-    tags = ["widget", "chart"]
+    tags = ["view", "chart"]
 
     def get_chart_points(self, data):
         raise NotImplementedError()
@@ -90,9 +22,9 @@ class ChartWidget(WidgetView):
         return {
             'x': chart_points['x'].__dict__,
             'y': [y.__dict__ for y in chart_points['y']],
-        }
+            }
 
-class ModelChartWidget(ChartWidget):
+class ModelChartView(ChartView):
     model = None
     y_data_field = None
     x_data_field = None

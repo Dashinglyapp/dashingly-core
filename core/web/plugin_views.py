@@ -1,13 +1,13 @@
-from flask import Blueprint, render_template, abort, request
+from flask import Blueprint, render_template, abort, request, jsonify
 from flask.ext.security import login_required
 from flask.ext.login import current_user
 from flask import redirect, url_for
 from flask.views import MethodView
 from core.manager import ExecutionContext
-from core.util import DEFAULT_SECURITY
+from core.plugins.views import ViewManager
+from core.util import DEFAULT_SECURITY, append_container
 from realize import settings
 import os
-from flask import current_app
 from core.plugins.manager import PluginManager
 from core.plugins.lib.proxies import PluginProxy
 from realize.log import logging
@@ -21,7 +21,7 @@ def add(plugin_hashkey):
     context = ExecutionContext(user=current_user)
     manager = PluginManager(context)
     manager.add(plugin_hashkey)
-    return redirect(url_for('main_views.manage_plugins'))
+    return jsonify(append_container({}, code=200))
 
 @plugin_views.route('/api/v1/plugins/<plugin_hashkey>/actions/remove')
 @DEFAULT_SECURITY
@@ -29,7 +29,7 @@ def remove(plugin_hashkey):
     context = ExecutionContext(user=current_user)
     manager = PluginManager(context)
     manager.remove(plugin_hashkey)
-    return redirect(url_for('main_views.manage_plugins'))
+    return jsonify(append_container({}, code=200))
 
 @plugin_views.route('/api/v1/plugins/<plugin_hashkey>/actions/configure')
 @DEFAULT_SECURITY
@@ -68,5 +68,49 @@ class PluginRoute(MethodView):
         return manager.call_route_handler(plugin_route, "delete", request.args)
 
 plugin_views.add_url_rule('/api/v1/plugins/<string:plugin_hashkey>/<path:plugin_route>', view_func=PluginRoute.as_view('plugin_route'))
+
+class ManagePlugins(MethodView):
+    decorators = [DEFAULT_SECURITY]
+
+    def get(self):
+        from core.plugins.loader import plugins
+        installed_plugins = current_user.plugins
+        installed_keys = [p.hashkey for p in installed_plugins]
+
+        plugin_schema = []
+        for p in plugins:
+            plugin = plugins[p]
+            plugin_scheme = dict(
+                name=plugin.name,
+                description=plugin.description,
+                remove_url=url_for('plugin_views.remove', plugin_hashkey=plugin.hashkey),
+                configure_url=url_for('plugin_views.configure', plugin_hashkey=plugin.hashkey),
+                add_url=url_for('plugin_views.add', plugin_hashkey=plugin.hashkey),
+                installed=(plugin.hashkey in installed_keys)
+            )
+            plugin_schema.append(plugin_scheme)
+
+        return jsonify(append_container(plugin_schema, name="plugin_list", tags=["system"]))
+
+plugin_views.add_url_rule('/api/v1/plugins/manage', view_func=ManagePlugins.as_view('manage_plugins'))
+
+class PluginViews(MethodView):
+    decorators = [DEFAULT_SECURITY]
+
+    def get(self):
+        from core.plugins.loader import plugins
+
+        user_views = []
+        for p in current_user.plugins:
+            views = plugins[p.hashkey].views
+            for v in views:
+                context = ExecutionContext(user=current_user, plugin=p)
+                manager = ViewManager(context)
+                data = manager.get_meta(v.hashkey)
+                user_views.append(data)
+
+        return jsonify(append_container(user_views, name="views", tags=[]))
+
+plugin_views.add_url_rule('/api/v1/views', view_func=PluginViews.as_view('views'))
 
 

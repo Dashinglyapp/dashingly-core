@@ -32,8 +32,8 @@
                     {% set logout = url_for('main_views.logout') %}
                     {% set login = url_for('main_views.login') %}
                     {% set register = url_for('main_views.register') %}
-                    {% set manage_plugins = url_for('main_views.manage_plugins') %}
-                    {% set views = url_for('main_views.views') %}
+                    {% set manage_plugins = url_for('plugin_views.manage_plugins') %}
+                    {% set views = url_for('plugin_views.views') %}
                     {% set authorizations = url_for('oauth_views.authorizations') %}
                     <ul class="nav navbar-nav">
                         <li {% if request.path == index %}class="active"{% endif %}><a href="{{ index }}">Home</a></li>

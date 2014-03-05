@@ -2,23 +2,22 @@ from core.plugins.lib.fields import IntegerField
 from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from core.tests.base import RealizeTest
 from core.tests.util import get_manager
-from core.tests.factories import UserFactory, PluginFactory, BlobFactory, MetricFactory, SourceFactory, PluginModelFactory
-from core.plugins.lib.models import BlobBase
-from core.plugins.lib.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
+from core.tests.factories import UserFactory, PluginFactory
+from core.plugins.lib.models import PluginDataModel
+from core.plugins.lib.proxies import MetricProxy, SourceProxy
 from realize.log import logging
 from core.tests.base import db
-from mock import patch
 from core.plugins.lib.base import BasePlugin
 
 log = logging.getLogger(__name__)
 
-class TestBlobModel(BlobBase):
+class TestModel(PluginDataModel):
     metric_proxy = MetricProxy(name="test1")
     source_proxy = SourceProxy(name='test1')
 
     number = IntegerField()
 
-class TestLoosePermissions(BlobBase):
+class TestLoosePermissions(PluginDataModel):
     metric_proxy = MetricProxy(name="test2")
     source_proxy = SourceProxy(name="test2")
     perms = [Scope(ZonePerm("user", all=True), BlockPerm("plugin", all=True))]
@@ -26,7 +25,7 @@ class TestLoosePermissions(BlobBase):
 class TestPlugin(BasePlugin):
     name = "test"
     hashkey = "1"
-    models = [TestBlobModel, TestLoosePermissions]
+    models = [TestModel, TestLoosePermissions]
 
 class DatabaseTest(RealizeTest):
     plugin_classes = [TestPlugin]
@@ -41,7 +40,7 @@ class DatabaseTest(RealizeTest):
         bad_user = UserFactory()
         bad_plugin = PluginFactory()
 
-        t_obj = TestBlobModel()
+        t_obj = TestModel()
         manager.add(t_obj)
 
         # We are the wrong user and plugin, so we don't have permissions for this yet.
@@ -68,9 +67,9 @@ class DatabaseTest(RealizeTest):
 
     def test_query(self):
         manager = get_manager(self.plugin_info['1']['plugin'], db.session, user=self.plugin_info['1']['user'])
-        obj = TestBlobModel()
+        obj = TestModel()
         manager.add(obj)
 
         # We have created the object, so querying for it should give us the first instance.
         data = manager.query_first(obj.plugin_proxy, obj.metric_proxy)
-        self.assertTrue(isinstance(data, TestBlobModel))
+        self.assertTrue(isinstance(data, TestModel))

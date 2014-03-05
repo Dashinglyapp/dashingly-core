@@ -1,4 +1,4 @@
-from core.database.models import Blob
+from core.database.models import PluginData
 from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from fields import Field, FloatField, DictField, DateTimeField, IntegerField
 import json
@@ -37,8 +37,8 @@ class ModelBase(object):
                 fields_list.append(prop)
         return fields_list
 
-class BlobBase(ModelBase):
-    model_cls = Blob
+class PluginDataModel(ModelBase):
+    model_cls = PluginData
 
     def get_fields(self):
         cls = self.__class__

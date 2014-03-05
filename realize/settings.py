@@ -50,11 +50,22 @@ OAUTH_CONFIG = {
         'access_token_method': 'POST',
         'access_token_url': 'https://github.com/login/oauth/access_token',
         'authorize_url': 'https://github.com/login/oauth/authorize'
+    },
+    'facebook': {
+        'request_token_params': {'scope': 'email, user_birthday, basic_info, user_likes, user_relationships, user_status, read_stream, read_mailbox, user_online_presence, user_actions.music, user_actions.news, user_actions.video, user_games_activity'},
+        'base_url': 'https://graph.facebook.com/',
+        'request_token_url': None,
+        'access_token_method': 'POST',
+        'access_token_url': 'https://graph.facebook.com/oauth/access_token',
+        'authorize_url': 'https://graph.facebook.com/oauth/authorize'
     }
 }
 
 MAX_TOKEN_AGE = 7 * 24 * 60 * 60 # seconds
+OAUTH_MAX_TOKEN_AGE = 5 * 60 # seconds
 VIEW_HASHKEY_LENGTH = 20
+
+WIDGET_SETTINGS_VERSION = 1
 
 try:
     from realize.private import *

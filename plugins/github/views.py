@@ -1,7 +1,8 @@
-from core.plugins.lib.views import WidgetView, ModelChartWidget
+from core.plugins.lib.views.base import View
+from core.plugins.lib.views.charts import ModelChartView
 from plugins.github.models import DailyCommits
 
-class DailyCommitChart(ModelChartWidget):
+class DailyCommitChart(ModelChartView):
     name = 'daily_commits'
     description = 'How many commits you made in github per day.'
     model = DailyCommits
@@ -12,7 +13,7 @@ class DailyCommitChart(ModelChartWidget):
     x_name = 'Date'
     y_name = 'Daily commits'
 
-class GithubWidgetView(WidgetView):
-    name = "github_widget"
-    description = "Widget for github."
+class GithubView(View):
+    name = "github_view"
+    description = "View for github."
     children = [DailyCommitChart]

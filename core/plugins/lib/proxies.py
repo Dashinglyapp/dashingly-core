@@ -1,5 +1,3 @@
-from core.database.models import Blob
-
 class MetricProxy(object):
     def __init__(self, name):
         self.name = name

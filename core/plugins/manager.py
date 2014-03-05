@@ -65,28 +65,32 @@ class PluginManager(BaseManager):
                     self.user.metrics.append(metric)
                 if source not in self.user.sources:
                     self.user.sources.append(source)
-        self.run_actions(plugin_hashkey, "setup")
+        if plugin_cls.setup_task is not None:
+            self.run_task(plugin_hashkey, plugin_cls.setup_task)
         db.session.commit()
+
+    def run_task(self, plugin_hashkey, task_cls):
+        from core.plugins.lib.proxies import TaskProxy
+        from core.tasks.runner import run_delayed_task
+
+        run_delayed_task.delay(
+            plugin_hashkey,
+            TaskProxy(name=task_cls.name),
+            user_id=self.user.id,
+            group_id=None
+        )
 
     def remove(self, plugin_hashkey):
         from app import db
         from core.plugins.loader import plugins
-        from core.database.models import Metric, Source
 
         plugin_cls = plugins[plugin_hashkey]
         plugin = self.lookup_plugin(plugin_hashkey)
         if plugin in self.user.plugins:
             self.user.plugins.remove(plugin)
 
-        self.run_actions(plugin_hashkey, "destroy")
-        if plugin_cls.models is not None:
-            for m in plugin_cls.models:
-                metric = get_cls(db.session, Metric, m.metric_proxy, create=True)
-                source = get_cls(db.session, Source, m.source_proxy, create=True)
-                if metric in self.user.metrics:
-                    self.user.metrics.remove(metric)
-                if source in self.user.sources:
-                    self.user.sources.remove(source)
+        if plugin_cls.remove_task is not None:
+            self.run_task(plugin_hashkey, plugin_cls.remove_task)
         db.session.commit()
 
     def get_settings(self, plugin_hashkey, data):

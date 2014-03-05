@@ -1,4 +1,4 @@
-from models import Metric, Source, Plugin, Blob, PluginModel
+from models import Metric, Source, Plugin, PluginData, PluginModel
 from core.plugins.lib.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
 from core.util import InvalidObjectException, get_cls
 from core.database.permissions import PermissionsManager
@@ -104,7 +104,18 @@ class DBManager(BaseManager):
             mod.data = obj.get_data()
         return obj
 
-    def _query_base(self, plugin_proxy=None, metric_proxy=None, query_cls=Blob, plugin_model_proxy=None):
+    def query_models(self, plugin_proxy=None, metric_proxy=None, query_cls=PluginData):
+        models = self.session.query(PluginModel).order_by("date")
+        if plugin_proxy is not None:
+            plugin = get_cls(self.session, Plugin, plugin_proxy, attrs=["hashkey"])
+            models = models.filter(getattr(query_cls, "plugin") == plugin)
+
+        if metric_proxy is not None:
+            metric = get_cls(self.session, Metric, metric_proxy)
+            models = models.filter(getattr(query_cls, "metric") == metric)
+        return models.distinct()
+
+    def _query_base(self, plugin_proxy=None, metric_proxy=None, query_cls=PluginData, plugin_model_proxy=None):
         query = self.session.query(query_cls).order_by("date")
         if self.user is not None:
             query = query.filter(getattr(query_cls, "user") == self.user)
@@ -191,21 +202,21 @@ class DBManager(BaseManager):
         return self.translate_objects(query.all())
 
     def query_range(self, query_column, plugin_proxy=None, metric_proxy=None, start=None, end=None):
-        return self._query_range(query_column, Blob, plugin_proxy, metric_proxy, start, end)
+        return self._query_range(query_column, PluginData, plugin_proxy, metric_proxy, start, end)
 
     def query_filter(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self._query_filter(Blob, plugin_proxy, metric_proxy, **kwargs)
+        return self._query_filter(PluginData, plugin_proxy, metric_proxy, **kwargs)
 
     def query_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self._query_filter(Blob, plugin_proxy, metric_proxy, last=True, **kwargs)
+        return self._query_filter(PluginData, plugin_proxy, metric_proxy, last=True, **kwargs)
 
     def query_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self._query_filter(Blob, plugin_proxy, metric_proxy, first=True, **kwargs)
+        return self._query_filter(PluginData, plugin_proxy, metric_proxy, first=True, **kwargs)
 
     def get_query_class(self, obj):
-        from core.plugins.lib.models import BlobBase
-        if issubclass(obj, BlobBase):
-            query_cls = Blob
+        from core.plugins.lib.models import PluginDataModel
+        if issubclass(obj, PluginDataModel):
+            query_cls = PluginData
         else:
             raise InvalidObjectException()
         return query_cls

@@ -1,12 +1,13 @@
 from wtforms import IntegerField, TextField, SelectField
 from wtforms.validators import required
-from core.plugins.lib.forms import FormWidget, SettingsFormWidget
+from core.plugins.lib.views.forms import FormView, SettingsFormView
 from core.plugins.lib.proxies import MetricProxy, SourceProxy
-from core.plugins.lib.views import WidgetView, ModelChartWidget
+from core.plugins.lib.views.base import View
+from core.plugins.lib.views.charts import ModelChartView
 from plugins.test.models import SettingsModel, MoodModel, DataModel
 
 
-class MoodForm(FormWidget):
+class MoodForm(FormView):
     name = "mood"
     description = "Please enter some information about your mood."
     model = MoodModel
@@ -15,7 +16,7 @@ class MoodForm(FormWidget):
 
     data = IntegerField('Mood', [required()], description="Number on a 1-10 scale.")
 
-class SurveyForm(FormWidget):
+class SurveyForm(FormView):
     name = "survey"
     description = "Please enter some long information about your mood."
     model = DataModel
@@ -25,13 +26,13 @@ class SurveyForm(FormWidget):
     text = TextField(description="Enter the mood you are feeling.")
     number = IntegerField(description="Number on a 1-10 scale.")
 
-class SettingsForm(SettingsFormWidget):
+class SettingsForm(SettingsFormView):
     name = "settings"
     description = "Some settings for you."
     model = SettingsModel
     your_name = TextField(description="Enter your name, man!")
 
-class DailyMoodChart(ModelChartWidget):
+class DailyMoodChart(ModelChartView):
     name = 'daily_mood'
     description = 'Your mood every day.'
     model = MoodModel
@@ -42,7 +43,7 @@ class DailyMoodChart(ModelChartWidget):
     x_name = 'Date'
     y_name = 'Mood'
 
-class GetStuffView(WidgetView):
+class GetStuffView(View):
     name = "get_stuff"
     description = "Get stuff.  Duh."
     children = [MoodForm, SurveyForm, DailyMoodChart]

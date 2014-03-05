@@ -1,4 +1,4 @@
-from flask import Blueprint,  request, url_for, session, render_template, jsonify
+from flask import Blueprint, jsonify
 from flask.ext.login import current_user
 from flask.ext.security import login_required
 from flask.views import MethodView
@@ -6,7 +6,7 @@ from flask_oauthlib.client import OAuth
 import os
 from core.util import append_container, DEFAULT_SECURITY
 from realize import settings
-from core.oauth.base import OauthBase
+from core.oauth.base import OauthBase, state_token_required
 
 oauth_views = Blueprint('oauth_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
 oauth = OAuth(oauth_views)
@@ -42,7 +42,7 @@ for handler in oauth_handlers:
             obj = auth(handler_obj)
 
             login = DEFAULT_SECURITY(getattr(obj, "login"))
-            auth_handler = authorized_handler(DEFAULT_SECURITY(getattr(obj, "authorized")))
+            auth_handler = authorized_handler(state_token_required(getattr(obj, "authorized")))
             token = token_getter(getattr(obj, "token"))
             handlers[handler] = handler_obj
             oauth_views.add_url_rule(login_url, login_route_name, view_func=login)

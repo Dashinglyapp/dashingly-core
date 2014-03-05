@@ -1,5 +1,7 @@
 from flask.ext.login import current_user
 from flask.ext.security import auth_required
+from sqlalchemy.exc import IntegrityError
+
 
 class InvalidObjectException(Exception):
     pass
@@ -20,16 +22,19 @@ def get_cls(session, cls, obj, attrs=None, create=False):
         for attr in attrs:
             setattr(val, attr, getattr(obj, attr))
         session.add(val)
-        session.commit()
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
     else:
         raise InvalidObjectException()
 
     return val
 
-def append_container(data, name=None, tags=None, code=200):
+def append_container(data, name=None, tags=None, code=200, data_key='modules'):
     return {
         'name': name,
         'tags': tags,
-        'modules': data,
+        data_key: data,
         'meta': {'code': code}
     }

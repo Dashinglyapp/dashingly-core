@@ -43,12 +43,9 @@ class Role(db.Model, RoleMixin):
         return "<Role(name='%s')>" % (self.name)
 
 class User(db.Model, UserMixin):
-
     hash_vals = ["username", "email"]
 
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(STRING_MAX))
-    last_name = db.Column(db.String(STRING_MAX))
     username = db.Column(db.String(STRING_MAX), unique=True)
     email = db.Column(db.String(STRING_MAX), unique=True)
     password = db.Column(db.String(STRING_MAX))
@@ -59,6 +56,7 @@ class User(db.Model, UserMixin):
     created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
     updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
 
+    profile = db.relationship("UserProfile", uselist=False, backref="user")
     plugins = db.relationship('Plugin', secondary=user_plugins, backref='users')
     metrics = db.relationship('Metric', secondary=user_metrics, backref='users')
     sources = db.relationship('Source', secondary=user_sources, backref='users')
@@ -66,7 +64,21 @@ class User(db.Model, UserMixin):
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
 
     def __repr__(self):
-        return "<User(name='%s', lastname='%s', password='%s')>" % (self.username, self.last_name, self.password)
+        return "<User(name='%s', email='%s', password='%s')>" % (self.username, self.email, self.password)
+
+class UserProfile(db.Model):
+    __tablename__ = 'userprofile'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    first_name = db.Column(db.String(STRING_MAX))
+    last_name = db.Column(db.String(STRING_MAX))
+    timezone = db.Column(db.Text)
+    settings = db.Column(db.Text)
+
+    def __repr__(self):
+        return "<UserProfile(id='%s', user_id='%s')>" % (self.id, self.user_id)
 
 class Authorization(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'name'), )
@@ -184,8 +196,30 @@ class PluginModel(db.Model):
     def __repr__(self):
         return "<PluginModel(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
-class Data(db.Model):
-    __tablename__ = 'data'
+class WidgetModel(db.Model):
+    __tablename__ = "widgetmodels"
+    __table_args__ = (db.UniqueConstraint('hashkey'), )
+    hash_vals = ["name"]
+
+    id = db.Column(db.Integer, primary_key=True)
+    version = db.Column(db.Integer)
+    name = db.Column(db.String(STRING_MAX))
+    hashkey = db.Column(db.String(STRING_MAX))
+    settings = db.Column(db.Text)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
+
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref('widgetmodels', order_by=id))
+    group = db.relationship("Group", backref=db.backref('widgetmodels', order_by=id))
+
+    def __repr__(self):
+        return "<WidgetModel(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
+
+class PluginData(db.Model):
+    __tablename__ = 'plugindata'
     __table_args__ = (db.UniqueConstraint("plugin_id", "metric_id", "user_id", "hashkey"), )
     hash_vals = ["plugin_id", "metric_id", "user_id", "date", "data"]
 
@@ -197,39 +231,22 @@ class Data(db.Model):
     source_id = db.Column(db.String(STRING_MAX), db.ForeignKey("sources.name"))
     plugin_model_id = db.Column(db.String(STRING_MAX), db.ForeignKey("pluginmodels.hashkey"))
     date = db.Column(db.DateTime(timezone=True))
-    type = db.Column(db.String(50))
+
+    data = db.Column(db.Text)
+
+    user = db.relationship("User", backref=db.backref('plugindata', order_by=id))
+    group = db.relationship("Group", backref=db.backref('plugindata', order_by=id))
+    plugin = db.relationship("Plugin", backref=db.backref('plugindata', order_by=id))
+    plugin_model = db.relationship("PluginModel", backref=db.backref('plugindata', order_by=id))
+    metric = db.relationship("Metric", backref=db.backref('plugindata', order_by=id))
+    source = db.relationship("Source", backref=db.backref('plugindata', order_by=id))
 
     hashkey = db.Column(db.String(STRING_MAX))
 
     created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
     modified = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
-
-    __mapper_args__ = {
-        'polymorphic_identity':'data',
-        'polymorphic_on':type
-    }
-
     def __repr__(self):
         return "<Data(plugin='%s', metric='%s')>" % (self.plugin_id, self.metric_id)
-
-class Blob(Data):
-    __tablename__ = 'blobs'
-    __mapper_args__ = {
-        'polymorphic_identity':'blobs',
-        }
-
-    id = db.Column(db.Integer, db.ForeignKey('data.id'), primary_key=True)
-    data = db.Column(db.Text)
-
-    user = db.relationship("User", backref=db.backref('blobs', order_by=id))
-    group = db.relationship("Group", backref=db.backref('blobs', order_by=id))
-    plugin = db.relationship("Plugin", backref=db.backref('blobs', order_by=id))
-    plugin_model = db.relationship("PluginModel", backref=db.backref('blobs', order_by=id))
-    metric = db.relationship("Metric", backref=db.backref('blobs', order_by=id))
-    source = db.relationship("Source", backref=db.backref('blobs', order_by=id))
-
-    def __repr__(self):
-        return "<Blobs(plugin='%s', metric='%s', data='%s')>" % (self.plugin_id, self.metric_id, self.data)
 
 # Create hashkeys to make items unique
 
@@ -248,10 +265,15 @@ def make_hash(vals):
 def add_hashkey(mapper, connection, target):
     target.hashkey = make_hash([getattr(target, k) for k in target.hash_vals])
 
+def add_profile(mapper, connection, target):
+    target.profile = UserProfile()
+
 # Register hashkey adding events.
-event.listen(Blob, "before_insert", add_hashkey)
+event.listen(PluginData, "before_insert", add_hashkey)
 event.listen(PluginModel, "before_insert", add_hashkey)
 event.listen(User, "before_insert", add_hashkey)
 event.listen(Group, "before_insert", add_hashkey)
 event.listen(Metric, "before_insert", add_hashkey)
 event.listen(Source, "before_insert", add_hashkey)
+event.listen(WidgetModel, "before_insert", add_hashkey)
+event.listen(User, "before_insert", add_profile)

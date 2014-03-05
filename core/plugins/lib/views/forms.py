@@ -1,7 +1,7 @@
 from flask_wtf import Form
 from wtforms import FloatField, IntegerField, TextField
 from datetime import datetime
-from core.plugins.lib.views import WidgetView
+from core.plugins.lib.views.base import View
 
 class JSONMixin(object):
     def as_json(self):
@@ -15,6 +15,7 @@ class JSONMixin(object):
             field['widget'] = f_obj.widget.input_type
             del field['_translations']
             del field['validators']
+            del field['object_data']
             field['flags'] = field['flags'].__dict__
             field['label'] = field['label'].__dict__
             fields.append(field)
@@ -22,12 +23,12 @@ class JSONMixin(object):
         return form
 
 
-class FormWidget(Form, WidgetView, JSONMixin):
+class FormView(Form, View, JSONMixin):
     metric_proxy = None
     plugin_proxy = None
     source_proxy = None
     model = None
-    tags = ["form", "widget"]
+    tags = ["form", "view"]
 
     def to_json(self, data):
         return self.as_json()
@@ -45,7 +46,7 @@ class FormWidget(Form, WidgetView, JSONMixin):
         self.manager.add(mod)
 
 
-class SettingsFormWidget(FormWidget):
+class SettingsFormView(FormView):
     def save(self, data):
         data = self.data
         mod = self.model(**data)

@@ -1,22 +1,7 @@
-from flask import session, request, url_for, jsonify, redirect
+from flask import session, request, url_for, redirect
 from core.oauth.base import OauthBase
 from flask.ext.security import login_required
 
 class GithubOauth(OauthBase):
     handler = "github"
-
-    def login(self):
-        return self.handler_obj.authorize(callback=url_for('oauth_views.{0}_authorized'.format(self.handler), _external=True))
-
-    def authorized(self, resp):
-        if resp is None:
-            return 'Access denied: reason=%s error=%s' % (
-                request.args['error_reason'],
-                request.args['error_description']
-            )
-        session['github_token'] = (resp['access_token'], '')
-        auth = self.get_or_create(self.handler, access_token=resp['access_token'])
-        return redirect(url_for('oauth_views.authorizations'))
-
-    def token(self):
-        return session.get('github_token')
+    session_token_name = "github_token"

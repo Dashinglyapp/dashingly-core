@@ -4,7 +4,7 @@ from factory.alchemy import SQLAlchemyModelFactory
 from core.tests.base import db
 import factory
 from datetime import datetime
-from core.database.models import User, Plugin, Metric, Source, Blob, PluginModel, Data, UserItem
+from core.database.models import User, Plugin, Metric, Source, PluginData, PluginModel,  UserItem
 from realize.log import logging
 
 log = logging.getLogger(__name__)
@@ -21,9 +21,6 @@ class BaseFactory(SQLAlchemyModelFactory):
         check_cls = model
         if model in [Plugin, Source, PluginModel, Metric]:
             check_cls = UserItem
-
-        if model in [Blob]:
-            check_cls = Data
 
         pk = getattr(check_cls, "id")
         pks = session.query(pk).all()
@@ -109,13 +106,11 @@ class SourceFactory(UserItemFactory):
 class PluginModelFactory(UserItemFactory):
     FACTORY_FOR = PluginModel
 
-class DataFactory(BaseFactory):
+class PluginDataFactory(BaseFactory):
+    FACTORY_FOR = PluginData
     date = datetime.now()
     data = None
 
     source = factory.SubFactory(SourceFactory)
     metric = factory.SubFactory(MetricFactory)
     plugin_model = factory.SubFactory(PluginModelFactory)
-
-class BlobFactory(DataFactory):
-    FACTORY_FOR = Blob

@@ -180,15 +180,70 @@ The current api version is one.  Please prefix all URLs with `/api/v1`.
 * `/login` GET request will get the login form, POST to login and get an auth token.
 * `/register` GET will get the signup form, POST to register and get an auth token.
 * `/logout` GET will logout.
-* `/views` GET will get a listing of all the views available.  This will include URLs for individual widgets.
+* `/views` GET will get a listing of all the views available.  This will include URLs for individual views.
 * `/authorizations` GET will show a listing of all available authorization methods and a url to send the user to to complete them.
 * `/plugins/manage` GET will show a listing of all plugins
+* `/widgets` GET will show you a list of all widgets and their settings URLs.
 
 ## Second level
 
-Widget views are URLs specific to each widget that allow for data extraction, saving, and so on.  Support for methods varies, but all will support GET, and some will support POST as well.  A sample widget url is `/plugins/1/views/eb35a77988996b002739`.  The format is `plugins/PLUGIN_HASHKEY/views/VIEW_HASHKEY`.
+### Views
+
+Views have specific URLs that allow for data extraction, saving, and so on.  Support for methods varies, but all will support GET, and some will support POST as well.  A sample view url is `/plugins/1/views/eb35a77988996b002739`.  The format is `plugins/PLUGIN_HASHKEY/views/VIEW_HASHKEY`.
+
+### Plugins
 
 `/plugins/1/actions/add` and `/plugins/1/actions/remove` allow you to add and remove plugins from the user list.  The format is `plugins/PLUGIN_HASHKEY/actions/ACTION_NAME`.  These two only support GET requests.  A third plugin management URL, `/plugins/1/actions/configure`, will GET form data, and POST will save the data.
 
+### Oauth
+
 Oauth login URLs like `/oauth/github/login` can be hit with a GET request to start the Oauth process.  After finishing the process, users will be redirected to `/authorizations`.
 
+### Widgets
+
+Widgets have their own settings URLs that look like `/widgets/test/settings`.  The format is `/widgets/WIDGET_NAME/settings`.  A GET request will pull the settings for the widget with that name for the current user and return them (will return {} if there are no settings).  A POST request will update the settings.  DELETE will remove the settings.  PUT and PATCH are not supported.
+
+For example, if you want to store settings for a widget named `test`, you would POST to `/widgets/test1/settings` with this data:
+
+```
+{
+"settings": {
+  "1":"1",
+  "2":"2"
+}
+}
+```
+
+The next time you do a GET request, you would receive:
+
+```
+{
+    "meta": {
+        "code": 200
+    },
+    "settings": {
+        "1": "1",
+        "2": "2"
+    },
+    "name": "widget_settings",
+    "tags": null
+}
+```
+
+## User Profile
+
+The user has a profile, and its attributes can be accessed and modified via `/api/v1/user/profile`.  This endpoint supports GET and POST.  A GET request will return typical form data.
+
+To save data, POST data in this format:
+
+```
+{
+  "timezone": "test",
+  "first_name": "test",
+  "last_name": "test",
+  "settings": {
+    "test" : "test"
+  }
+
+}
+```
