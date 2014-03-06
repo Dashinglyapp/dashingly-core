@@ -64,7 +64,3 @@ def run_interval_tasks(interval):
         for plugin in user.plugins:
             # Add back in the .delay here -- removed for debugging.
             run_delayed_plugin.delay(plugin.hashkey, user_id=user.id, interval=interval)
-
-    for group in Group.query.all():
-        for plugin in plugins:
-            run_delayed_plugin.delay(plugin.hashkey, group_id=group.id, interval=interval)

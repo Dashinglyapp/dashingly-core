@@ -168,20 +168,41 @@ You will receieve an auth token:
 }
 ```
 
-API Endpoint Listing
+Top level API
 ---------------------------------------------
 
 ## API Versions
 
-The current api version is one.  Please prefix all URLs with `/api/v1`.
+The current API version is one.  Please prefix all URLs with `/api/v1`.
 
-## Top level
+## Top Level URLs
 
 * `/login` GET request will get the login form, POST to login and get an auth token.
 * `/register` GET will get the signup form, POST to register and get an auth token.
 * `/logout` GET will logout.
+* `/auth_check` POST will check on the authentication of the user.  Use `token` as the parameter to pass the auth token.
+
+### Oauth
+
+Oauth login URLs like `/oauth/github/login` can be hit with a GET request to start the Oauth process.  After finishing the process, users will be redirected to `/authorizations`.
+
+Scoping
+-----------------------------------------------
+
+## Scopes
+
+Most URLs require a scope.  Scopes define who the URL is associated with by specifying the type of object, and a unique id for it.
+
+The type of object can be 'user' or 'group'.  The unique id (hashkey) specifies which user or group you are operating on.  The general format is `/API_VERSION/TYPE/KEY/ACTION`.  For example, a valid URL to get a list of views would be `/api/v1/user/USER_HASHKEY/views`.  Similarly, for a group, it would be `/api/v1/group/GROUP_HASHKEY/views`.
+
+API version and scope should be prepended to all the URLs after this point.
+
+Shared scoped URLs
+------------------------------------------------
+
+## Top level
+
 * `/views` GET will get a listing of all the views available.  This will include URLs for individual views.
-* `/authorizations` GET will show a listing of all available authorization methods and a url to send the user to to complete them.
 * `/plugins/manage` GET will show a listing of all plugins
 * `/widgets` GET will show you a list of all widgets and their settings URLs.
 
@@ -189,19 +210,15 @@ The current api version is one.  Please prefix all URLs with `/api/v1`.
 
 ### Views
 
-Views have specific URLs that allow for data extraction, saving, and so on.  Support for methods varies, but all will support GET, and some will support POST as well.  A sample view url is `/plugins/1/views/eb35a77988996b002739`.  The format is `plugins/PLUGIN_HASHKEY/views/VIEW_HASHKEY`.
+Views have specific URLs that allow for data extraction, saving, and so on.  Support for methods varies, but all will support GET, and some will support POST as well.  A sample view url is `/plugins/gh55hjghgh44/views/eb35a77988996b002739`.  The format is `plugins/PLUGIN_HASHKEY/views/VIEW_HASHKEY`.
 
-### Plugins
+### Plugin Management
 
-`/plugins/1/actions/add` and `/plugins/1/actions/remove` allow you to add and remove plugins from the user list.  The format is `plugins/PLUGIN_HASHKEY/actions/ACTION_NAME`.  These two only support GET requests.  A third plugin management URL, `/plugins/1/actions/configure`, will GET form data, and POST will save the data.
-
-### Oauth
-
-Oauth login URLs like `/oauth/github/login` can be hit with a GET request to start the Oauth process.  After finishing the process, users will be redirected to `/authorizations`.
+If you are managing plugins, `/plugins/1/actions/add` and `/plugins/1/actions/remove` allow you to add and remove plugins for different objects.  The format is `plugins/PLUGIN_HASHKEY/actions/ACTION_NAME`.  These two only support GET requests.  A third plugin management URL, `/plugins/1/actions/configure`, will GET form data, and POST will save the data.
 
 ### Widgets
 
-Widgets have their own settings URLs that look like `/widgets/test/settings`.  The format is `/widgets/WIDGET_NAME/settings`.  A GET request will pull the settings for the widget with that name for the current user and return them (will return {} if there are no settings).  A POST request will update the settings.  DELETE will remove the settings.  PUT and PATCH are not supported.
+Widgets have their own settings URLs that look like `/widgets/test/settings`.  The format is `/widgets/WIDGET_NAME/settings`.  A GET request will pull the settings for the widget with that name for the current scope and return them (will return {} if there are no settings).  A POST request will update the settings.  DELETE will remove the settings.  PUT and PATCH are not supported.
 
 For example, if you want to store settings for a widget named `test`, you would POST to `/widgets/test1/settings` with this data:
 
@@ -230,9 +247,28 @@ The next time you do a GET request, you would receive:
 }
 ```
 
-## User Profile
+Group Scoped URLs
+-------------------------------------------------------------
 
-The user has a profile, and its attributes can be accessed and modified via `/api/v1/user/profile`.  This endpoint supports GET and POST.  A GET request will return typical form data.
+## List Views
+
+`api/v1/group` GET will return a list of all groups.  POST will create a new group.
+
+## Detail Views
+
+Groups have their own detail views and actions.  Hitting `/api/v1/group/GROUP_HASHKEY` with a GET request will give you the information for that group.
+
+User Scoped URLs
+-------------------------------------------------------------
+
+## Top Level
+
+* `/groups` GET will show you a list of all groups you are in.  POST will create a new group with the specified `name` and `description`.
+* `/authorizations` GET will show a listing of all available authorization methods and a url to send the user to to complete them.
+
+## Profile
+
+The user has a profile, and its attributes can be accessed and modified via `/profile`.  This endpoint supports GET and POST.  A GET request will return typical form data.
 
 To save data, POST data in this format:
 
@@ -247,3 +283,8 @@ To save data, POST data in this format:
 
 }
 ```
+
+## Groups
+
+`/groups/GROUP_HASHKEY/add` GET will add you to the specified group.
+`/groups/GROUP_HASHKEY/remove` will remove you from the specified group.

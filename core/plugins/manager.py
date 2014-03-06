@@ -10,14 +10,28 @@ class InvalidMethodException(Exception):
 class InvalidRouteException(Exception):
     pass
 
+class PluginActionRunner(object):
+    def __init__(self, context):
+        self.context = context
+        self.manager = PluginManager(context)
+
+    def add(self, plugin_hashkey):
+        return self.manager.add(plugin_hashkey)
+
+    def remove(self, plugin_hashkey):
+        return self.manager.remove(plugin_hashkey)
+
+    def configure(self, plugin_hashkey, data):
+        return self.manager.get_settings(plugin_hashkey, data)
+
 class PluginManager(BaseManager):
     def list(self):
         return self.user.plugins
 
-    def call_view_handler(self, path, method, data):
+    def call_view_handler(self, view_hashkey, method, data):
         context = ExecutionContext(plugin=self.plugin, user=current_user)
         view_manager = ViewManager(context)
-        return view_manager.handle_route(path, method, data)
+        return view_manager.handle_route(view_hashkey, method, data)
 
     def call_form_handler(self, path, method, data):
         plugin_cls = self.get_plugin(self.plugin.hashkey)
@@ -32,12 +46,8 @@ class PluginManager(BaseManager):
 
         raise InvalidRouteException()
 
-    def call_route_handler(self, path, method, data):
-        if path.startswith("views/"):
-            path = path[6:]
-            return self.call_view_handler(path, method, data)
-
-        raise InvalidRouteException()
+    def call_route_handler(self, view_hashkey, method, data):
+        return self.call_view_handler(view_hashkey, method, data)
 
     def run_actions(self, plugin_hashkey, action_name, **kwargs):
         plugin_cls = self.get_plugin(plugin_hashkey)

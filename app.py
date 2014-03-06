@@ -1,10 +1,5 @@
 from flask import Flask, jsonify
 from flask_security.utils import md5
-from core.web.main_views import main_views
-from core.web.plugin_views import plugin_views
-from core.oauth.oauth_views import oauth_views
-from core.web.widget_views import widget_views
-from core.web.user_views import user_views
 from core.database.models import db, User, Role
 from flask.ext.security import Security, SQLAlchemyUserDatastore
 from flask.ext.babel import Babel
@@ -34,14 +29,29 @@ def make_json_error(ex):
                             else 500)
     return response
 
-def create_app():
-    app = Flask(__name__, template_folder='templates')
+def register_blueprints(app):
+    from core.web.main_views import main_views
+    from core.web.plugin_views import plugin_views
+    from core.oauth.oauth_views import oauth_views
+    from core.web.widget_views import widget_views
+    from core.web.user_views import user_views
+    from core.web.group_views import group_views
     app.register_blueprint(main_views)
     app.register_blueprint(plugin_views)
     app.register_blueprint(oauth_views)
     app.register_blueprint(widget_views)
     app.register_blueprint(user_views)
+    app.register_blueprint(group_views)
+
+def register_extensions(app):
+    csrf.init_app(app)
+    oauth.init_app(app)
+    babel.init_app(app)
+
+def create_app():
+    app = Flask(__name__, template_folder='templates')
     app.config.from_object('realize.settings')
+
     db.app = app
     db.init_app(app)
 
@@ -53,8 +63,10 @@ def create_app():
 def create_test_app():
     app = create_app()
     app.config.from_object('realize.test_settings')
+
     db.app = app
     db.init_app(app)
+
     return app
 
 def token_loader(token, max_age=settings.MAX_TOKEN_AGE):
@@ -67,19 +79,22 @@ def token_loader(token, max_age=settings.MAX_TOKEN_AGE):
         user = app.extensions['security'].datastore.find_user(id=data[0])
         if user and md5(user.password) == data[1]:
             return user
-    except:
+    except Exception:
         pass
     return AnonymousUser()
 
 
 app = create_app()
-oauth = OAuth(app)
-csrf = CsrfProtect(app)
-babel = Babel(app)
+oauth = OAuth()
+csrf = CsrfProtect()
+babel = Babel()
 celery = make_celery(app)
 
 if __name__ == '__main__':
+    register_blueprints(app)
+    register_extensions(app)
     db.create_all(app=app)
+
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security = Security(app, user_datastore)
 

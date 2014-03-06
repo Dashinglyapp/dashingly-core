@@ -33,6 +33,7 @@ class UserProfile(MethodView):
             'last_name': model.last_name,
             'settings': model.settings,
             'timezone': model.timezone,
+            'hashkey': current_user.hashkey,
         }
         try:
             data['settings'] = json.loads(data['settings'])
@@ -41,11 +42,11 @@ class UserProfile(MethodView):
         form = UserProfileForm(**data)
         return model, form.as_json()
 
-    def get(self):
+    def get(self, hashkey):
         model, data = self.get_model()
         return jsonify(append_container(data, name="user_profile", data_key='profile'))
 
-    def post(self):
+    def post(self, hashkey):
         from app import db
         model, model_settings = self.get_model()
         for attr in self.fields:
@@ -57,4 +58,4 @@ class UserProfile(MethodView):
         db.session.commit()
         return jsonify(append_container("", code=201))
 
-user_views.add_url_rule('/api/v1/user/profile', view_func=UserProfile.as_view('user_profile'))
+user_views.add_url_rule('/api/v1/user/<string:hashkey>/profile', view_func=UserProfile.as_view('user_profile'))

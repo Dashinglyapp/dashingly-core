@@ -34,6 +34,11 @@ roles_users = db.Table('roles_users', db.Model.metadata,
                        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
                        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
 
+group_plugins = db.Table('group_plugins', db.Model.metadata,
+                        db.Column('group_id', db.Integer, db.ForeignKey('groups.id')),
+                        db.Column('plugin_id', db.Integer, db.ForeignKey('plugins.id'))
+)
+
 class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(STRING_MAX), unique=True)
@@ -79,6 +84,26 @@ class UserProfile(db.Model):
 
     def __repr__(self):
         return "<UserProfile(id='%s', user_id='%s')>" % (self.id, self.user_id)
+
+class Group(db.Model):
+    __tablename__ = 'groups'
+    hash_vals = ["name", "owner"]
+
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    owner = db.relationship("User", backref=db.backref('owned_groups', order_by=id))
+    hashkey = db.Column(db.String(STRING_MAX), unique=True)
+
+    name = db.Column(db.String(STRING_MAX), unique=True)
+    description = db.Column(db.Text)
+
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    plugins = db.relationship('Plugin', secondary=group_plugins, backref='groups')
+
+    def __repr__(self):
+        return "<Group(name='%s', id='%s', owner='%s')>" % (self.name, self.id, self.owner_id)
 
 class Authorization(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'name'), )
@@ -159,21 +184,6 @@ class Source(UserItem):
 
     def __repr__(self):
         return "<Source(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
-
-class Group(UserItem):
-    __tablename__ = 'groups'
-    __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name'), )
-    __mapper_args__ = {
-        'polymorphic_identity': 'groups',
-        }
-    hash_vals = ["name"]
-
-    id = db.Column(db.Integer, db.ForeignKey('useritem.id'), primary_key=True)
-    name = db.Column(db.String(STRING_MAX))
-    hashkey = db.Column(db.String(STRING_MAX))
-
-    def __repr__(self):
-        return "<Group(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
 class PluginModel(db.Model):
     __tablename__ = 'pluginmodels'

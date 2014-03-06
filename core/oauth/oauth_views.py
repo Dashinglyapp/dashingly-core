@@ -4,7 +4,7 @@ from flask.ext.security import login_required
 from flask.views import MethodView
 from flask_oauthlib.client import OAuth
 import os
-from core.util import append_container, DEFAULT_SECURITY
+from core.util import append_container, DEFAULT_SECURITY, get_context_for_scope
 from realize import settings
 from core.oauth.base import OauthBase, state_token_required
 
@@ -51,8 +51,9 @@ for handler in oauth_handlers:
 class Authorizations(MethodView):
     decorators = [DEFAULT_SECURITY]
 
-    def get(self):
-        auth = current_user.authorizations
+    def get(self, scope, hashkey):
+        context, mod = get_context_for_scope(scope, hashkey)
+        auth = mod.authorizations
         current_auth = {}
         for a in auth:
             current_auth[a.name] = auth
@@ -69,4 +70,4 @@ class Authorizations(MethodView):
 
         return jsonify(append_container(auth_schema, name="authorizations", tags=["system"]))
 
-oauth_views.add_url_rule('/api/v1/authorizations', view_func=Authorizations.as_view('authorizations'))
+oauth_views.add_url_rule('/api/v1/<string:scope>/<string:hashkey>/authorizations', view_func=Authorizations.as_view('authorizations'))

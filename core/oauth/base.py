@@ -66,7 +66,7 @@ class OauthBase(object):
             access_token=resp.get(self.access_token_name, None),
             refresh_token=resp.get(self.refresh_token_name, None)
         )
-        return redirect(url_for('oauth_views.authorizations'))
+        return redirect(url_for('oauth_views.authorizations', scope="user", hashkey=current_user.hashkey))
 
     def get_or_create(self, name, **kwargs):
         from core.database.models import Authorization

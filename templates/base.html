@@ -32,12 +32,12 @@
                     {% set logout = url_for('main_views.logout') %}
                     {% set login = url_for('main_views.login') %}
                     {% set register = url_for('main_views.register') %}
-                    {% set manage_plugins = url_for('plugin_views.manage_plugins') %}
-                    {% set views = url_for('plugin_views.views') %}
-                    {% set authorizations = url_for('oauth_views.authorizations') %}
                     <ul class="nav navbar-nav">
                         <li {% if request.path == index %}class="active"{% endif %}><a href="{{ index }}">Home</a></li>
                         {% if current_user.is_authenticated() %}
+                            {% set manage_plugins = url_for('plugin_views.manage_plugins', scope='user', hashkey=current_user.hashkey) %}
+                            {% set views = url_for('plugin_views.views', scope='user', hashkey=current_user.hashkey) %}
+                            {% set authorizations = url_for('oauth_views.authorizations', scope='user', hashkey=current_user.hashkey) %}
                             <li {% if request.path == views %}class="active"{% endif %}><a href="{{ views }}">Views</a></li>
                             <li {% if request.path == authorizations %}class="active"{% endif %}><a href="{{ authorizations }}">Accounts</a></li>
                             <li class="dropdown">
