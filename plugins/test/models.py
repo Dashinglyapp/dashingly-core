@@ -23,4 +23,4 @@ class SettingsModel(PluginDataModel):
     source_proxy = SourceProxy(name="self")
     perms = [Scope(ZonePerm("user", current=True), BlockPerm("plugin", current=True))]
 
-    name = Field()
+    your_name = Field()

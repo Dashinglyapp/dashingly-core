@@ -206,14 +206,15 @@ class PluginModel(db.Model):
     def __repr__(self):
         return "<PluginModel(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
-class WidgetModel(db.Model):
-    __tablename__ = "widgetmodels"
+class ResourceData(db.Model):
+    __tablename__ = "resourcedata"
     __table_args__ = (db.UniqueConstraint('hashkey'), )
-    hash_vals = ["name"]
+    hash_vals = ["name", "type"]
 
     id = db.Column(db.Integer, primary_key=True)
     version = db.Column(db.Integer)
     name = db.Column(db.String(STRING_MAX))
+    type = db.Column(db.String(STRING_MAX))
     hashkey = db.Column(db.String(STRING_MAX))
     settings = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -222,11 +223,11 @@ class WidgetModel(db.Model):
     created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
     updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
 
-    user = db.relationship("User", backref=db.backref('widgetmodels', order_by=id))
-    group = db.relationship("Group", backref=db.backref('widgetmodels', order_by=id))
+    user = db.relationship("User", backref=db.backref('resourcedata', order_by=id))
+    group = db.relationship("Group", backref=db.backref('resourcedata', order_by=id))
 
     def __repr__(self):
-        return "<WidgetModel(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
+        return "<ResourceData(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
 class PluginData(db.Model):
     __tablename__ = 'plugindata'
@@ -285,5 +286,5 @@ event.listen(User, "before_insert", add_hashkey)
 event.listen(Group, "before_insert", add_hashkey)
 event.listen(Metric, "before_insert", add_hashkey)
 event.listen(Source, "before_insert", add_hashkey)
-event.listen(WidgetModel, "before_insert", add_hashkey)
+event.listen(ResourceData, "before_insert", add_hashkey)
 event.listen(User, "before_insert", add_profile)

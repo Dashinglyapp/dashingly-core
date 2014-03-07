@@ -65,7 +65,7 @@ MAX_TOKEN_AGE = 7 * 24 * 60 * 60 # seconds
 OAUTH_MAX_TOKEN_AGE = 5 * 60 # seconds
 VIEW_HASHKEY_LENGTH = 20
 
-WIDGET_SETTINGS_VERSION = 1
+RESOURCE_DATA_VERSION = 1
 
 try:
     from realize.private import *

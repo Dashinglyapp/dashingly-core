@@ -3,6 +3,7 @@ from flask.ext.security import login_required
 from flask.ext.login import current_user
 from flask import redirect, url_for
 from flask.views import MethodView
+from wtforms_json import MultiDict
 from core.database.models import Group
 from core.manager import ExecutionContext
 from core.plugins.views import ViewManager
@@ -22,7 +23,8 @@ class PluginList(MethodView):
 
     def get(self, scope, hashkey):
         from core.plugins.loader import plugins
-        installed_plugins = current_user.plugins
+        context, model = get_context_for_scope(scope, hashkey)
+        installed_plugins = model.plugins
         installed_keys = [p.hashkey for p in installed_plugins]
 
         plugin_schema = []
@@ -50,19 +52,31 @@ class PluginDetailView(MethodView):
         runner = PluginActionRunner(context)
         return runner
 
+    def get_task_url(self, task_id):
+        if task_id is not None:
+            return url_for('task_views.task_status', task_id=task_id)
+        return None
+
     def add(self, scope, hashkey, plugin_hashkey):
         runner = self.get_runner(scope, hashkey)
-        runner.add(plugin_hashkey)
-        return jsonify(append_container({}, code=200))
+        data = runner.add(plugin_hashkey)
+        data['url'] = self.get_task_url(data['task_id'])
+        return data
 
     def remove(self, scope, hashkey, plugin_hashkey):
         runner = self.get_runner(scope, hashkey)
-        runner.remove(plugin_hashkey)
-        return jsonify(append_container({}, code=200))
+        data = runner.remove(plugin_hashkey)
+        data['url'] = self.get_task_url(data['task_id'])
+        return data
 
-    def configure(self, scope, hashkey, plugin_hashkey):
+    def get_settings(self, scope, hashkey, plugin_hashkey):
         runner = self.get_runner(scope, hashkey)
-        response = runner.configure(plugin_hashkey, request.form)
+        response = runner.get_settings(plugin_hashkey)
+        return response
+
+    def save_settings(self, scope, hashkey, plugin_hashkey):
+        runner = self.get_runner(scope, hashkey)
+        response = runner.save_settings(plugin_hashkey, MultiDict(request.json))
         return response
 
     def get(self, scope, hashkey, plugin_hashkey, action):
@@ -71,7 +85,15 @@ class PluginDetailView(MethodView):
         elif action == "remove":
             data = self.remove(scope, hashkey, plugin_hashkey)
         elif action == "configure":
-            data = self.configure(scope, hashkey, plugin_hashkey)
+            data = self.get_settings(scope, hashkey, plugin_hashkey)
+        else:
+            raise InvalidActionException()
+
+        return jsonify(append_container(data, code=201))
+
+    def post(self, scope, hashkey, plugin_hashkey, action):
+        if action == "configure":
+            data = self.save_settings(scope, hashkey, plugin_hashkey)
         else:
             raise InvalidActionException()
 

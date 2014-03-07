@@ -14,6 +14,9 @@ class InvalidScopeException(Exception):
 class InvalidObjectException(Exception):
     pass
 
+class IncorrectPermissionsException(Exception):
+    pass
+
 DEFAULT_SECURITY = auth_required('token', 'session')
 
 def get_cls(session, cls, obj, attrs=None, create=False):

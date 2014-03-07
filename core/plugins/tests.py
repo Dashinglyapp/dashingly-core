@@ -67,8 +67,7 @@ class PluginManagerTest(RealizeTest):
 
     def generate_view_url(self, plugin_hashkey, view_name):
         key = hashlib.sha224("{0}{1}".format(plugin_hashkey, view_name)).hexdigest()[:settings.VIEW_HASHKEY_LENGTH]
-        view_route = "views/{0}".format(key)
-        return view_route
+        return key
 
     def test_get_route(self):
         context = ExecutionContext(user=self.plugin_info['1']['user'], plugin=self.plugin_info['1']['plugin'])
@@ -82,7 +81,7 @@ class PluginManagerTest(RealizeTest):
         manager = PluginManager(context)
 
         # Should return the response from the view.
-        response = manager.get_settings(self.plugin_info['1']['plugin'].hashkey, {})
-        self.assertEqual(response.status_code, 200)
+        response = manager.get_settings(self.plugin_info['1']['plugin'].hashkey)
+        self.assertTrue(isinstance(response, dict))
 
 

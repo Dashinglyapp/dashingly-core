@@ -2,11 +2,15 @@ from core.database.models import PluginData
 from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from fields import Field, FloatField, DictField, DateTimeField, IntegerField
 import json
+from realize.log import logging
+
+log = logging.getLogger(__name__)
 
 class DuplicateRecord(Exception):
     pass
 
 class ModelBase(object):
+    reserved_keys = ["id", "hashkey", "date", "created", "modified"]
     id = IntegerField()
     hashkey = Field()
     date = DateTimeField()
@@ -44,7 +48,7 @@ class PluginDataModel(ModelBase):
         cls = self.__class__
         fields = []
         for f in dir(cls):
-            if isinstance(getattr(cls, f), Field):
+            if isinstance(getattr(cls, f), Field) and f not in self.reserved_keys:
                 fields.append(f)
         return fields
 
@@ -62,7 +66,8 @@ class PluginDataModel(ModelBase):
     def set_data(self, data):
         try:
             data = json.loads(data)
-        except:
+        except Exception:
+            log.error("Could not load data.")
             data = {}
 
         for f in self.get_fields():

@@ -47,8 +47,8 @@ class GroupView(BaseGroupView):
                 if hasattr(request, "json") and attr in request.json:
                     val = request.json.get(attr, mod)
                     setattr(mod, attr, val)
-        current_user.groups.append(mod)
-        db.session.commit()
+            current_user.groups.append(mod)
+            db.session.commit()
         return jsonify(append_container("", code=201))
 
 group_views.add_url_rule('/api/v1/group', view_func=GroupView.as_view('groups'))

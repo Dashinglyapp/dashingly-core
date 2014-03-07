@@ -65,13 +65,8 @@ class DBManager(BaseManager):
         attribs = self.setup_model(obj)
         mod = obj.model_cls(**attribs)
 
-        try:
-            self.session.add(mod)
-            self.session.commit()
-        except IntegrityError:
-            log.exception("Found a duplicate record.")
-            self.session.rollback()
-            raise DuplicateRecord()
+        self.session.add(mod)
+        self.commit()
 
         obj.id = mod.id
         obj.hashkey = mod.hashkey
@@ -88,12 +83,18 @@ class DBManager(BaseManager):
             raise InvalidObjectException()
 
     def commit(self):
-        self.session.commit()
+        try:
+            self.session.commit()
+        except IntegrityError:
+            log.exception("Found a duplicate record.")
+            self.session.rollback()
+            raise DuplicateRecord()
 
     def delete(self, obj):
         mod = self.find_model(obj, id=obj.id)
         if self.perm_manager.check_perms(mod, "delete"):
             self.session.delete(mod)
+            self.commit()
         return obj
 
     def update(self, obj):
@@ -102,6 +103,7 @@ class DBManager(BaseManager):
             for v in self.modify_vals:
                 setattr(mod, v, getattr(obj, v))
             mod.data = obj.get_data()
+            self.commit()
         return obj
 
     def query_models(self, plugin_proxy=None, metric_proxy=None, query_cls=PluginData):
@@ -119,8 +121,6 @@ class DBManager(BaseManager):
         query = self.session.query(query_cls).order_by("date")
         if self.user is not None:
             query = query.filter(getattr(query_cls, "user") == self.user)
-        elif self.group is not None:
-            query = query.filter(getattr(query_cls, "group") == self.group)
 
         query = query.order_by(query_cls.date.asc())
         if plugin_proxy is not None:

@@ -76,10 +76,12 @@ Run tests:
 nosetests --with-coverage --cover-package="core" --logging-level="INFO"
 ```
 
-How to Login and get auth token
+Authentication
 ---------------------------------------------
 
-Send a GET request to `/login` with `Content-Type` set to `application/json`.
+## Login
+
+Send a GET request to `/api/v1/login` with `Content-Type` set to `application/json`.
 
 You will get something like this (some fields omitted):
 
@@ -134,12 +136,13 @@ You will now get an authentication token:
 
 Use the token in the header with all requests to resources where the user needs to be logged in.  Set the `Authentication-Token` header to the value of the token.  This token will expire after 1 week.  The client should get a new token when this happens.
 
-Now we can request form data by sending a GET request to `/forms` with the `Authentication-Token` header set to `WyIxIiwiMm` and the `Content-Type` header set to `application/json`.
+## Verify token
 
-How to register
----------------------------------------------
+If you want to check the validity of an auth token, you can POST to `/api/v1/auth_check` with the `token` parameter set to the token.  You will receive the authentication status and user hashkey.
 
-Send a GET request to `/register` with `Content-Type` set to `application/json`.
+## Register
+
+Send a GET request to `/api/v1/register` with `Content-Type` set to `application/json`.
 
 You will receive similar output to the login request.
 
@@ -181,6 +184,7 @@ The current API version is one.  Please prefix all URLs with `/api/v1`.
 * `/register` GET will get the signup form, POST to register and get an auth token.
 * `/logout` GET will logout.
 * `/auth_check` POST will check on the authentication of the user.  Use `token` as the parameter to pass the auth token.
+* `/tasks/TASK_ID` GET will show the status of the given task.  Tasks are used for things like setup of a plugin. Task status URLs are passed back when a plugin is installed or removed.
 
 ### Oauth
 
@@ -200,11 +204,13 @@ API version and scope should be prepended to all the URLs after this point.
 Shared scoped URLs
 ------------------------------------------------
 
+All of these URLs start with `/api/v1/group/GROUP_HASHKEY` or `/api/v1/user/USER_HASHKEY`.
+
 ## Top level
 
 * `/views` GET will get a listing of all the views available.  This will include URLs for individual views.
 * `/plugins/manage` GET will show a listing of all plugins
-* `/widgets` GET will show you a list of all widgets and their settings URLs.
+* `/resources` GET will show you a list of all resources and their settings URLs.  POST will create a new resource with specified parameters `name` (string), `type` (string), and `settings` (json object).
 
 ## Second level
 
@@ -214,20 +220,24 @@ Views have specific URLs that allow for data extraction, saving, and so on.  Sup
 
 ### Plugin Management
 
-If you are managing plugins, `/plugins/1/actions/add` and `/plugins/1/actions/remove` allow you to add and remove plugins for different objects.  The format is `plugins/PLUGIN_HASHKEY/actions/ACTION_NAME`.  These two only support GET requests.  A third plugin management URL, `/plugins/1/actions/configure`, will GET form data, and POST will save the data.
+* `/plugins/PLUGIN_HASHKEY/actions/add` Add the plugin to the specified scope object. GET only.
+* `/plugins/PLUGIN_HASHKEY/actions/remove` Remove the plugins from the specified scope object. GET only.
+* `/plugins/PLUGIN_HASHKEY/actions/configure` Configure the specified plugin.  GET will get the form representation, and POST will save the new settings.
 
-### Widgets
+### Resources
 
-Widgets have their own settings URLs that look like `/widgets/test/settings`.  The format is `/widgets/WIDGET_NAME/settings`.  A GET request will pull the settings for the widget with that name for the current scope and return them (will return {} if there are no settings).  A POST request will update the settings.  DELETE will remove the settings.  PUT and PATCH are not supported.
+Frontend resources have their own settings URLs that look like `/resources/RESOURCE_HASHKEY`.  A GET request will pull the settings for the resource with that name for the current scope and return them (will return {} if there are no settings).  A PUT request will update the settings.  DELETE will remove the settings.
 
-For example, if you want to store settings for a widget named `test`, you would POST to `/widgets/test1/settings` with this data:
+For example, if you want to store settings for a resource with name `test` and type `dashboard`, you would POST to `/resources` with this data:
 
 ```
 {
 "settings": {
   "1":"1",
   "2":"2"
-}
+},
+"name": "test",
+"type": "dashboard"
 }
 ```
 
@@ -242,13 +252,15 @@ The next time you do a GET request, you would receive:
         "1": "1",
         "2": "2"
     },
-    "name": "widget_settings",
+    "name": "resource_data",
     "tags": null
 }
 ```
 
 Group Scoped URLs
 -------------------------------------------------------------
+
+All of these URLs start with `/api/v1/group/GROUP_HASHKEY`.
 
 ## List Views
 
@@ -260,6 +272,8 @@ Groups have their own detail views and actions.  Hitting `/api/v1/group/GROUP_HA
 
 User Scoped URLs
 -------------------------------------------------------------
+
+All of these URLs start with `/api/v1/user/USER_HASHKEY`.
 
 ## Top Level
 

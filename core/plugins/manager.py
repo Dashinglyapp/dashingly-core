@@ -21,12 +21,22 @@ class PluginActionRunner(object):
     def remove(self, plugin_hashkey):
         return self.manager.remove(plugin_hashkey)
 
-    def configure(self, plugin_hashkey, data):
-        return self.manager.get_settings(plugin_hashkey, data)
+    def get_settings(self, plugin_hashkey):
+        return self.manager.get_settings(plugin_hashkey)
+
+    def save_settings(self, plugin_hashkey, data):
+        return self.manager.save_settings(plugin_hashkey, data)
 
 class PluginManager(BaseManager):
     def list(self):
         return self.user.plugins
+
+    def get_scope_model(self):
+        if self.user is not None:
+            return self.user
+        elif self.group is not None:
+            return self.group
+        return None
 
     def call_view_handler(self, view_hashkey, method, data):
         context = ExecutionContext(plugin=self.plugin, user=current_user)
@@ -64,56 +74,87 @@ class PluginManager(BaseManager):
 
         plugin_cls = plugins[plugin_hashkey]
         plugin = self.lookup_plugin(plugin_hashkey)
-        if plugin not in self.user.plugins:
-            self.user.plugins.append(plugin)
+        model = self.get_scope_model()
+        if plugin not in model.plugins:
+            model.plugins.append(plugin)
 
         if plugin_cls.models is not None:
             for m in plugin_cls.models:
-                metric = get_cls(db.session, Metric, m.metric_proxy, create=True)
-                source = get_cls(db.session, Source, m.source_proxy, create=True)
-                if metric not in self.user.metrics:
-                    self.user.metrics.append(metric)
-                if source not in self.user.sources:
-                    self.user.sources.append(source)
-        if plugin_cls.setup_task is not None:
-            self.run_task(plugin_hashkey, plugin_cls.setup_task)
+                # Register metrics and sources.
+                get_cls(db.session, Metric, m.metric_proxy, create=True)
+                get_cls(db.session, Source, m.source_proxy, create=True)
+
+        # If we are operating on a user, run the setup actions.
+        setup_id = None
+        if plugin_cls.setup_task is not None and self.user is not None:
+            setup_id = self.run_task(plugin_hashkey, plugin_cls.setup_task)
         db.session.commit()
+        return dict(task_id=setup_id)
 
     def run_task(self, plugin_hashkey, task_cls):
         from core.plugins.lib.proxies import TaskProxy
         from core.tasks.runner import run_delayed_task
 
-        run_delayed_task.delay(
+        result = run_delayed_task.delay(
             plugin_hashkey,
             TaskProxy(name=task_cls.name),
             user_id=self.user.id,
             group_id=None
         )
+        return result.id
 
     def remove(self, plugin_hashkey):
         from app import db
         from core.plugins.loader import plugins
 
         plugin_cls = plugins[plugin_hashkey]
+        model = self.get_scope_model()
         plugin = self.lookup_plugin(plugin_hashkey)
-        if plugin in self.user.plugins:
-            self.user.plugins.remove(plugin)
+        if plugin in model.plugins:
+            model.plugins.remove(plugin)
 
-        if plugin_cls.remove_task is not None:
-            self.run_task(plugin_hashkey, plugin_cls.remove_task)
+        # Run removal tasks if there is a user.
+        remove_id=None
+        if plugin_cls.remove_task is not None and self.user is not None:
+            remove_id=self.run_task(plugin_hashkey, plugin_cls.remove_task)
         db.session.commit()
+        return dict(task_id=remove_id)
 
-    def get_settings(self, plugin_hashkey, data):
-        plugin_cls = self.get_plugin(plugin_hashkey)
-        manager = self.get_manager_from_hashkey(plugin_hashkey)
+    def get_settings_model(self, plugin_cls):
+        manager = self.get_manager_from_hashkey(plugin_cls.hashkey)
         if plugin_cls.settings_form is None:
-            return jsonify({})
+            return None
 
         obj_cls = plugin_cls.settings_form.model
         obj = obj_cls()
         obj = manager.get_or_create(obj, query_data=False)
-        form = plugin_cls.settings_form()
-        for f in form:
-            setattr(form, f.name, getattr(obj, f.name, None))
+        return obj
 
-        return jsonify(form.as_json())
+    def get_settings(self, plugin_hashkey):
+        plugin_cls = self.get_plugin(plugin_hashkey)
+        obj = self.get_settings_model(plugin_cls)
+        form = plugin_cls.settings_form()
+        for f in obj.get_fields():
+            if not hasattr(form, f):
+                continue
+            setattr(form, f, getattr(obj, f, None))
+
+        return form.as_json()
+
+    def save_settings(self, plugin_hashkey, data):
+        from app import db
+        plugin_cls = self.get_plugin(plugin_hashkey)
+        obj = self.get_settings_model(plugin_cls)
+        form = plugin_cls.settings_form(data)
+        manager = self.get_manager_from_hashkey(plugin_hashkey)
+        if form.validate():
+            for f in form:
+                if not hasattr(obj, f.name) or f.data is None:
+                    continue
+                setattr(obj, f.name, f.data)
+            manager.update(obj)
+            return {}
+        else:
+            return form.as_json()
+
+

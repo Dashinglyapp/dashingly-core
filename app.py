@@ -33,15 +33,18 @@ def register_blueprints(app):
     from core.web.main_views import main_views
     from core.web.plugin_views import plugin_views
     from core.oauth.oauth_views import oauth_views
-    from core.web.widget_views import widget_views
+    from core.web.resource_views import resource_views
     from core.web.user_views import user_views
     from core.web.group_views import group_views
+    from core.tasks.task_views import task_views
+
     app.register_blueprint(main_views)
     app.register_blueprint(plugin_views)
     app.register_blueprint(oauth_views)
-    app.register_blueprint(widget_views)
+    app.register_blueprint(resource_views)
     app.register_blueprint(user_views)
     app.register_blueprint(group_views)
+    app.register_blueprint(task_views)
 
 def register_extensions(app):
     csrf.init_app(app)
