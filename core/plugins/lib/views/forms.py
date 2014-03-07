@@ -18,7 +18,6 @@ class JSONMixin(object):
             del field['object_data']
             field['flags'] = field['flags'].__dict__
             field['label'] = field['label'].__dict__
-            field['value'] = getattr(self, f, None)
             fields.append(field)
         form['fields'] = fields
         return form

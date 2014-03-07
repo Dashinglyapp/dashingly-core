@@ -6,15 +6,14 @@ from core.plugins.lib.proxies import SourceProxy, MetricProxy, PluginProxy, Plug
 from core.tests.factories import PluginDataFactory, MetricFactory, SourceFactory, PluginModelFactory, PluginFactory, UserFactory
 from realize.log import logging
 
-app = create_test_app()
-db.app = app
-db.init_app(app)
-
 log = logging.getLogger(__name__)
 
 class RealizeTest(TestCase):
-
+    plugin_classes = []
     def create_app(self):
+        app = create_test_app()
+        db.app = app
+        db.init_app(app)
         return app
 
     @property
@@ -50,7 +49,7 @@ class RealizeTest(TestCase):
         return cls_args
 
     def setUp(self):
-        db.create_all(app=app)
+        db.create_all(app=self.app)
         self.plugin_info = {}
         for p in self.plugin_classes:
             plugin = PluginFactory(name=p.name, hashkey=p.hashkey)

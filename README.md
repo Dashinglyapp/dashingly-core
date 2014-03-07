@@ -81,6 +81,8 @@ Authentication
 
 ## Login
 
+Please register a user before this!  Passwords must be at least 6 characters long.
+
 Send a GET request to `/api/v1/login` with `Content-Type` set to `application/json`.
 
 You will get something like this (some fields omitted):
@@ -114,7 +116,7 @@ Sample JSON for login:
 ```
 {
 "email": "test@realize.pe",
-"password": "test"
+"password": "test11"
 }
 ```
 
@@ -151,7 +153,7 @@ Then do a POST request with the `X-CSRF-Token` and `Content-Type` headers set.
 ```
 {
 "email": "test1@realize.pe",
-"password": "test"
+"password": "test11"
 }
 ```
 
@@ -171,7 +173,32 @@ You will receieve an auth token:
 }
 ```
 
-Top level API
+API Spec
+---------------------------------------------
+
+To check the latest API json spec, visit `api/v1/spec.json`.  This will list all endpoints.
+
+If you want to see a browsable API, visit `api/v1/spec.html`.  These will be more up to date than what is below.
+
+API Keys
+--------------------------------------------
+
+The api takes data in JSON format, and returns JSON.
+
+If there is an error with your request, it will return something that looks like this:
+
+```
+{
+    "code": 404,
+    "error": true,
+    "message": "404: Not Found"
+}
+```
+
+See `core.web.tests` for more details on how the flow works.
+
+
+API Routes
 ---------------------------------------------
 
 ## API Versions

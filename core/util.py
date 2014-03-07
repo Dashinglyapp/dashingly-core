@@ -1,9 +1,12 @@
 from flask.ext.login import current_user
 from flask.ext.security import auth_required
+from flask import url_for
 from sqlalchemy.exc import IntegrityError
 from core.database.models import Group
 from core.manager import ExecutionContext
 
+def api_url_for(namespace, cls, **values):
+    return url_for("{0}.{1}".format(namespace, cls.endpoint), **values)
 
 class NotOwnerException(Exception):
     pass

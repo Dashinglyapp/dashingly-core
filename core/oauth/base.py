@@ -6,6 +6,7 @@ from itsdangerous import URLSafeTimedSerializer
 from werkzeug.utils import redirect
 from flask.ext.login import current_user
 from core.database.models import User
+from core.util import api_url_for
 from realize import settings
 
 def get_serializer():
@@ -55,6 +56,7 @@ class OauthBase(object):
             ))
 
     def authorized(self, resp):
+        from core.oauth.oauth_views import Authorizations
         if resp is None:
             return 'Access denied: reason=%s error=%s' % (
                 request.args['error_reason'],
@@ -66,7 +68,7 @@ class OauthBase(object):
             access_token=resp.get(self.access_token_name, None),
             refresh_token=resp.get(self.refresh_token_name, None)
         )
-        return redirect(url_for('oauth_views.authorizations', scope="user", hashkey=current_user.hashkey))
+        return redirect(api_url_for("oauth_views", Authorizations, scope="user", hashkey=current_user.hashkey))
 
     def get_or_create(self, name, **kwargs):
         from core.database.models import Authorization

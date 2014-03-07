@@ -29,28 +29,8 @@
                 </div>
                 <div class="navbar-collapse collapse" id="collapse-bar">
                     {% set index = url_for('main_views.index') %}
-                    {% set logout = url_for('main_views.logout') %}
-                    {% set login = url_for('main_views.login') %}
-                    {% set register = url_for('main_views.register') %}
                     <ul class="nav navbar-nav">
                         <li {% if request.path == index %}class="active"{% endif %}><a href="{{ index }}">Home</a></li>
-                        {% if current_user.is_authenticated() %}
-                            {% set manage_plugins = url_for('plugin_views.manage_plugins', scope='user', hashkey=current_user.hashkey) %}
-                            {% set views = url_for('plugin_views.views', scope='user', hashkey=current_user.hashkey) %}
-                            {% set authorizations = url_for('oauth_views.authorizations', scope='user', hashkey=current_user.hashkey) %}
-                            <li {% if request.path == views %}class="active"{% endif %}><a href="{{ views }}">Views</a></li>
-                            <li {% if request.path == authorizations %}class="active"{% endif %}><a href="{{ authorizations }}">Accounts</a></li>
-                            <li class="dropdown">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Signed in as {{ current_user.email }} <b class="caret"></b></a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="{{ manage_plugins }}">Manage plugins</a></li>
-                                    <li><a href="{{ logout }}">Logout</a></li>
-                                </ul>
-                            </li>
-                        {% else %}
-                            <li {% if request.path == login %}class="active"{% endif %}><a href="{{ login }}">Login</a></li>
-                            <li {% if request.path == register %}class="active"{% endif %}><a href="{{ register }}">Sign Up</a></li>
-                        {% endif %}
                     </ul>
                 </div><!--/.navbar-collapse -->
             </div>

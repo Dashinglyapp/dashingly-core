@@ -8,14 +8,18 @@ from realize import settings
 import os
 from realize.log import logging
 import json
+from flask.ext.restful import Resource, Api
+from flask.ext.restful import reqparse
+from flask_restful_swagger import swagger
 
 log = logging.getLogger(__name__)
 group_views = Blueprint('group_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
+api = swagger.docs(Api(group_views), api_spec_url=settings.API_SPEC_URL)
 
 class InvalidActionException(Exception):
     pass
 
-class BaseGroupView(MethodView):
+class BaseGroupView(Resource):
     decorators = [DEFAULT_SECURITY]
     fields = ["name", "description"]
 
@@ -23,7 +27,8 @@ class BaseGroupView(MethodView):
         data = {
             'name': group.name,
             'description': group.description,
-            'owner': current_user == group.owner
+            'owner': current_user == group.owner,
+            'hashkey': group.hashkey
         }
         return data
 
@@ -31,44 +36,49 @@ class BaseGroupView(MethodView):
         return Group.query.filter(Group.hashkey == hashkey).first()
 
 class GroupView(BaseGroupView):
+    """
+    Shows what groups are available and makes new ones.
+    GET will return a list of groups.  Returns name, description, owner, and hashkey.
+    """
 
     def get(self):
         data = []
         for g in Group.query.all():
             data.append(self.convert_group(g))
-        return jsonify(append_container(data, name="user_groups"))
+        return data
 
     def post(self):
         from app import db
-        mod = Group.query.filter(Group.owner == current_user).first()
-        if mod is None:
-            mod = Group(owner=current_user)
-            for attr in self.fields:
-                if hasattr(request, "json") and attr in request.json:
-                    val = request.json.get(attr, mod)
-                    setattr(mod, attr, val)
-            current_user.groups.append(mod)
-            db.session.commit()
-        return jsonify(append_container("", code=201))
+        parser = reqparse.RequestParser()
+        parser.add_argument('name', type=str, help='The name of the group.')
+        parser.add_argument('description', type=str, help='The description of the group.')
+        args = parser.parse_args()
 
-group_views.add_url_rule('/api/v1/group', view_func=GroupView.as_view('groups'))
+        mod = Group(owner=current_user)
+        mod.name = args['name']
+        mod.description = args['description']
+        current_user.groups.append(mod)
+        db.session.commit()
+        return self.convert_group(mod), 201
+
+api.add_resource(GroupView, '/api/v1/group')
 
 class GroupDetailView(BaseGroupView):
 
     def get(self, hashkey):
         mod = self.get_group_by_key(hashkey)
-        return jsonify(append_container(self.convert_group(mod), name="user_groups"))
+        return self.convert_group(mod)
 
-group_views.add_url_rule('/api/v1/group/<string:hashkey>', view_func=GroupDetailView.as_view('group_detail'))
+api.add_resource(GroupDetailView, '/api/v1/group/<string:hashkey>')
 
 class UserGroupView(BaseGroupView):
     def get(self):
         data = []
         for g in current_user.groups:
             data.append(self.convert_group(g))
-        return jsonify(append_container(data, name="user_groups"))
+        return data
 
-group_views.add_url_rule('/api/v1/user/<string:user_hashkey>/groups', view_func=GroupDetailView.as_view('user_group_view'))
+api.add_resource(UserGroupView, '/api/v1/user/<string:user_hashkey>/groups')
 
 class UserGroupActionView(BaseGroupView):
 
@@ -77,12 +87,14 @@ class UserGroupActionView(BaseGroupView):
         mod = self.get_group_by_key(hashkey)
         current_user.groups.append(mod)
         db.session.commit()
+        return self.convert_group(mod)
 
     def remove(self, hashkey):
         from app import db
         mod = self.get_group_by_key(hashkey)
         current_user.groups.remove(mod)
         db.session.commit()
+        return {}, 204
 
     def get(self, user_hashkey, group_hashkey, action):
         if action == "add":
@@ -92,6 +104,6 @@ class UserGroupActionView(BaseGroupView):
         else:
             raise InvalidActionException()
 
-        return jsonify(append_container(data, code=201))
+        return data
 
-group_views.add_url_rule('/api/v1/user/<string:user_hashkey>/groups/<string:group_hashkey>/<string:action>', view_func=UserGroupActionView.as_view('user_group_actions'))
+api.add_resource(UserGroupActionView, '/api/v1/user/<string:user_hashkey>/groups/<string:group_hashkey>/<string:action>')

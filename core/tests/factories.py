@@ -61,6 +61,7 @@ class UserFactory(BaseFactory):
 
     username = factory.Sequence(lambda n: u'User %d' % n)
     email = factory.Sequence(lambda n: u'Email %d' % n)
+    password = "testtest"
 
     @factory.post_generation
     def plugins(self, create, extracted, **kwargs):
@@ -71,23 +72,6 @@ class UserFactory(BaseFactory):
             for plugin in extracted:
                 self.plugins.append(plugin)
 
-    @factory.post_generation
-    def metrics(self, create, extracted, **kwargs):
-        if not create:
-            return
-
-        if extracted:
-            for metric in extracted:
-                self.metrics.append(metric)
-
-    @factory.post_generation
-    def sources(self, create, extracted, **kwargs):
-        if not create:
-            return
-
-        if extracted:
-            for source in extracted:
-                self.sources.append(source)
 
 class UserItemFactory(BaseFactory):
     name = factory.Sequence(lambda n: u"Item %d" % n)

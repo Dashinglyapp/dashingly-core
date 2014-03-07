@@ -5,61 +5,84 @@ from flask import url_for
 from flask.views import MethodView
 from core.database.models import ResourceData
 from core.resources.manager import ResourceManager
-from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope
+from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, api_url_for
 from realize import settings
 import os
+from flask.ext.restful import Resource, Api
+from flask.ext.restful import reqparse
+from flask_restful_swagger import swagger
+
 from realize.log import logging
 from app import csrf
 log = logging.getLogger(__name__)
 
 resource_views = Blueprint('resource_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
+api = swagger.docs(Api(resource_views), api_spec_url=settings.API_SPEC_URL)
 
-class ResourceView(MethodView):
-    decorators = [DEFAULT_SECURITY]
+class BaseResourceView(Resource):
+    method_decorators = [DEFAULT_SECURITY]
+
+    def convert(self, resource):
+        return dict(
+            hashkey=resource.hashkey,
+            name=resource.name,
+            type=resource.type,
+            settings=resource.settings
+        )
+
+class ResourceView(BaseResourceView):
+    method_decorators = [csrf.exempt, DEFAULT_SECURITY]
 
     def get(self, scope, hashkey):
         from app import db
         context, mod = get_context_for_scope(scope, hashkey)
-        resource_data = db.session.query(ResourceData.hashkey).filter(getattr(ResourceData, scope) == mod).all()
+        resource_data = db.session.query(ResourceData).filter(getattr(ResourceData, scope) == mod).all()
         resources = []
         for r in resource_data:
-            hashkey = r[0]
-            url = url_for('resource_views.resource_detail', resource_hashkey=hashkey, scope=scope, hashkey=hashkey)
-            resources.append(dict(hashkey=hashkey, url=url))
-        return jsonify(append_container(resources, code=200))
+            data = self.convert(r)
+            print data
+            url = api_url_for("resource_views", ResourceDetail, resource_hashkey=data['hashkey'], scope=scope, hashkey=hashkey)
+            data['url'] = url
+            resources.append(data)
+        return resources
 
-    @csrf.exempt
     def post(self, scope, hashkey):
-        name = request.json['name']
-        type = request.json['type']
-        settings = request.json['settings']
+        parser = reqparse.RequestParser()
+        parser.add_argument('name', type=str, help='The name of the resource.')
+        parser.add_argument('type', type=str, help='The type of the resource.')
+        parser.add_argument('settings', type=dict, help='Settings to store.')
+        args = parser.parse_args()
+
+        name = args['name']
+        type = args['type']
+        settings = args['settings']
 
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
         model = manager.create_resource(settings, name, type)
-        return jsonify(append_container({'hashkey': model.hashkey}, code=201, name="model"))
+        return self.convert(model)
 
-resource_views.add_url_rule('/api/v1/<string:scope>/<string:hashkey>/resources', view_func=ResourceView.as_view('resources'))
+api.add_resource(ResourceView, '/api/v1/<string:scope>/<string:hashkey>/resources')
 
-class ResourceDetail(MethodView):
-    decorators = [DEFAULT_SECURITY]
+class ResourceDetail(BaseResourceView):
 
     def get(self, scope, hashkey, resource_hashkey):
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
         model, model_settings = manager.get_resource(resource_hashkey)
-        return jsonify(append_container(model_settings, name="resource_data", data_key='data'))
+        return model_settings
 
     def delete(self, scope, hashkey, resource_hashkey):
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
         manager.delete_resource(resource_hashkey)
-        return jsonify(append_container("", code=204))
+        return {}, 204
 
     def put(self, scope, hashkey, resource_hashkey):
         settings = request.json['settings']
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
         manager.update_resource(resource_hashkey, settings)
+        return {}
 
-resource_views.add_url_rule('/api/v1/<string:scope>/<string:hashkey>/resources/<string:resource_hashkey>', view_func=ResourceDetail.as_view('resource_detail'))
+api.add_resource(ResourceDetail, '/api/v1/<string:scope>/<string:hashkey>/resources/<string:resource_hashkey>')

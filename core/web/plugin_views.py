@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, abort, request, jsonify
+from flask import Blueprint, render_template, abort, request, jsonify, current_app
 from flask.ext.security import login_required
 from flask.ext.login import current_user
 from flask import redirect, url_for
@@ -7,19 +7,40 @@ from wtforms_json import MultiDict
 from core.database.models import Group
 from core.manager import ExecutionContext
 from core.plugins.views import ViewManager
-from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, InvalidScopeException
+from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, InvalidScopeException, api_url_for
 from core.web.group_views import InvalidActionException
 from realize import settings
 import os
 from core.plugins.manager import PluginManager, PluginActionRunner
 from core.plugins.lib.proxies import PluginProxy
+from flask.ext.restful import Resource, Api
+from flask.ext.restful import reqparse
+from flask_restful_swagger import swagger
 from realize.log import logging
+
 log = logging.getLogger(__name__)
 
 plugin_views = Blueprint('plugin_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
+api = swagger.docs(Api(plugin_views), api_spec_url=settings.API_SPEC_URL)
 
-class PluginList(MethodView):
-    decorators = [DEFAULT_SECURITY]
+class BasePluginView(Resource):
+    method_decorators = [DEFAULT_SECURITY]
+
+    def convert(self, plugin, scope, hashkey):
+        print PluginActionView.__dict__
+        data = dict(
+            name=plugin.name,
+            description=plugin.description,
+            remove_url=api_url_for("plugin_views", PluginActionView, plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="remove"),
+            configure_url=api_url_for("plugin_views", PluginActionView, plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="configure"),
+            add_url=api_url_for("plugin_views", PluginActionView, plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="add")
+        )
+        return data
+
+    def get_group_by_key(self, hashkey):
+        return Group.query.filter(Group.hashkey == hashkey).first()
+
+class PluginList(BasePluginView):
 
     def get(self, scope, hashkey):
         from core.plugins.loader import plugins
@@ -30,22 +51,15 @@ class PluginList(MethodView):
         plugin_schema = []
         for p in plugins:
             plugin = plugins[p]
-            plugin_scheme = dict(
-                name=plugin.name,
-                description=plugin.description,
-                remove_url=url_for('plugin_views.plugin_detail', plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="remove"),
-                configure_url=url_for('plugin_views.plugin_detail', plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="configure"),
-                add_url=url_for('plugin_views.plugin_detail', plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="add"),
-                installed=(plugin.hashkey in installed_keys)
-            )
+            plugin_scheme = self.convert(plugin, scope, hashkey)
+            plugin_scheme['installed'] = (plugin.hashkey in installed_keys)
             plugin_schema.append(plugin_scheme)
 
-        return jsonify(append_container(plugin_schema, name="plugin_list", tags=["system"]))
+        return plugin_schema
 
-plugin_views.add_url_rule('/api/v1/<string:scope>/<string:hashkey>/plugins', view_func=PluginList.as_view('plugin_list'))
+api.add_resource(PluginList, '/api/v1/<string:scope>/<string:hashkey>/plugins')
 
-class PluginDetailView(MethodView):
-    decorators = [DEFAULT_SECURITY]
+class PluginActionView(BasePluginView):
 
     def get_runner(self, scope, hashkey):
         context, mod = get_context_for_scope(scope, hashkey)
@@ -89,7 +103,7 @@ class PluginDetailView(MethodView):
         else:
             raise InvalidActionException()
 
-        return jsonify(append_container(data, code=201))
+        return data
 
     def post(self, scope, hashkey, plugin_hashkey, action):
         if action == "configure":
@@ -97,12 +111,11 @@ class PluginDetailView(MethodView):
         else:
             raise InvalidActionException()
 
-        return jsonify(append_container(data, code=201))
+        return data
 
-plugin_views.add_url_rule('/api/v1/<string:scope>/<string:hashkey>/plugins/<string:plugin_hashkey>/actions/<string:action>', view_func=PluginDetailView.as_view('plugin_detail'))
+api.add_resource(PluginActionView, '/api/v1/<string:scope>/<string:hashkey>/plugins/<string:plugin_hashkey>/actions/<string:action>')
 
-class PluginViewsList(MethodView):
-    decorators = [DEFAULT_SECURITY]
+class PluginViewsList(BasePluginView):
 
     def get(self, scope, hashkey):
         from core.plugins.loader import plugins
@@ -116,12 +129,11 @@ class PluginViewsList(MethodView):
                 data = manager.get_meta(v.hashkey)
                 user_views.append(data)
 
-        return jsonify(append_container(user_views, name="views", tags=[]))
+        return user_views
 
-plugin_views.add_url_rule('/api/v1/<string:scope>/<string:hashkey>/views', view_func=PluginViewsList.as_view('plugin_views'))
+api.add_resource(PluginViewsList, '/api/v1/<string:scope>/<string:hashkey>/views')
 
-class PluginViewsDetail(MethodView):
-    decorators = [DEFAULT_SECURITY]
+class PluginViewsDetail(BasePluginView):
 
     def get_manager(self, scope, hashkey, plugin_hashkey):
         context, mod = get_context_for_scope(scope, hashkey)
@@ -150,6 +162,4 @@ class PluginViewsDetail(MethodView):
         manager = self.get_manager(scope, hashkey, plugin_hashkey)
         return manager.call_route_handler(view_hashkey, "delete", request.args)
 
-plugin_views.add_url_rule('/api/v1/<string:scope>/<string:hashkey>/plugins/<string:plugin_hashkey>/views/<string:view_hashkey>', view_func=PluginViewsDetail.as_view('plugin_route'))
-
-
+api.add_resource(PluginViewsDetail, '/api/v1/<string:scope>/<string:hashkey>/plugins/<string:plugin_hashkey>/views/<string:view_hashkey>')

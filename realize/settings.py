@@ -66,6 +66,8 @@ OAUTH_MAX_TOKEN_AGE = 5 * 60 # seconds
 VIEW_HASHKEY_LENGTH = 20
 
 RESOURCE_DATA_VERSION = 1
+API_VERSION = ".1"
+API_SPEC_URL = "/api/v1/spec"
 
 try:
     from realize.private import *

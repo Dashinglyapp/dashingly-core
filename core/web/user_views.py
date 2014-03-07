@@ -11,10 +11,14 @@ from realize import settings
 import os
 from realize.log import logging
 import json
+from flask.ext.restful import Resource, Api
+from flask.ext.restful import reqparse
+from flask_restful_swagger import swagger
 
 log = logging.getLogger(__name__)
 
 user_views = Blueprint('user_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
+api = swagger.docs(Api(user_views), api_spec_url=settings.API_SPEC_URL)
 
 class UserProfileForm(Form, JSONMixin):
     first_name = TextField('First Name', description="Your first name.")
@@ -22,7 +26,7 @@ class UserProfileForm(Form, JSONMixin):
     settings = TextField('Settings', description="Settings.")
     timezone = TextField('Timezone', description="Your timezone.")
 
-class UserProfile(MethodView):
+class UserProfile(Resource):
     decorators = [DEFAULT_SECURITY]
     fields = ["first_name", "last_name", "settings", "timezone"]
 
@@ -39,12 +43,14 @@ class UserProfile(MethodView):
             data['settings'] = json.loads(data['settings'])
         except ValueError:
             data['settings'] = {}
+        except TypeError:
+            data['settings'] = {}
         form = UserProfileForm(**data)
         return model, form.as_json()
 
     def get(self, hashkey):
         model, data = self.get_model()
-        return jsonify(append_container(data, name="user_profile", data_key='profile'))
+        return data
 
     def post(self, hashkey):
         from app import db
@@ -56,6 +62,6 @@ class UserProfile(MethodView):
                     val = json.dumps(val)
                 setattr(model, attr, val)
         db.session.commit()
-        return jsonify(append_container("", code=201))
+        return {}, 201
 
-user_views.add_url_rule('/api/v1/user/<string:hashkey>/profile', view_func=UserProfile.as_view('user_profile'))
+api.add_resource(UserProfile, '/api/v1/user/<string:hashkey>/profile')

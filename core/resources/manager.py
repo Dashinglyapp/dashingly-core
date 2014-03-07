@@ -37,6 +37,8 @@ class ResourceManager(BaseManager):
                 model_settings = json.loads(model.settings)
             except ValueError:
                 model_settings = {}
+            except TypeError:
+                model_settings = {}
             return model, model_settings
         return None, None
 
