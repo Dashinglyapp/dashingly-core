@@ -13,16 +13,3 @@ class TestPlugin(BasePlugin):
     settings_form = SettingsForm
     views = [GetStuffView]
     hashkey = manifest.HASHKEY
-
-    def setup(self):
-        moods = self.manager.query_time_filter(manifest.plugin_proxy, MetricProxy(name="mood"))
-        if len(moods) == 0:
-            mood = MoodModel(data=1, date=datetime.utcnow())
-            self.manager.add(mood)
-        data = self.manager.query_blob_filter(manifest.plugin_proxy, MetricProxy(name="data"))
-        if len(data) == 0:
-            data = DataModel(date=datetime.utcnow(), text="This is some text.", number=1)
-            self.manager.add(data)
-
-    def destroy(self):
-        pass

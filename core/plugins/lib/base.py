@@ -4,11 +4,13 @@ class BasePlugin(object):
     name = None
     hashkey = None
     routes = []
-    forms = []
     models = []
     views = []
     permissions = []
+    tasks = []
     settings_form = None
+    setup_task = None
+    remove_task = None
 
     def __init__(self, context, manager):
 

@@ -1,20 +1,19 @@
 from flask.ext.testing import TestCase
 from mock import patch
 from app import create_test_app, db
-from core.plugins.lib.models import BlobBase, TimePointBase
+from core.plugins.lib.models import PluginDataModel
 from core.plugins.lib.proxies import SourceProxy, MetricProxy, PluginProxy, PluginModelProxy
-from core.tests.factories import BlobFactory, TimePointFactory, MetricFactory, SourceFactory, PluginModelFactory, PluginFactory, UserFactory
+from core.tests.factories import PluginDataFactory, MetricFactory, SourceFactory, PluginModelFactory, PluginFactory, UserFactory
 from realize.log import logging
-
-app = create_test_app()
-db.app = app
-db.init_app(app)
 
 log = logging.getLogger(__name__)
 
 class RealizeTest(TestCase):
-
+    plugin_classes = []
     def create_app(self):
+        app = create_test_app()
+        db.app = app
+        db.init_app(app)
         return app
 
     @property
@@ -25,10 +24,8 @@ class RealizeTest(TestCase):
         return plugins
 
     def create_bundle(self, metric_name, source_name, plugin, cls):
-        if issubclass(cls, BlobBase):
-            factory = BlobFactory
-        elif issubclass(cls, TimePointBase):
-            factory = TimePointFactory
+        if issubclass(cls, PluginDataModel):
+            factory = PluginDataFactory
         else:
             raise Exception("Invalid class type for factory.")
 
@@ -52,7 +49,7 @@ class RealizeTest(TestCase):
         return cls_args
 
     def setUp(self):
-        db.create_all(app=app)
+        db.create_all(app=self.app)
         self.plugin_info = {}
         for p in self.plugin_classes:
             plugin = PluginFactory(name=p.name, hashkey=p.hashkey)

@@ -4,7 +4,7 @@ from factory.alchemy import SQLAlchemyModelFactory
 from core.tests.base import db
 import factory
 from datetime import datetime
-from core.database.models import User, Plugin, Metric, Source, TimePoint, Blob, PluginModel, Data, UserItem
+from core.database.models import User, Plugin, Metric, Source, PluginData, PluginModel,  UserItem
 from realize.log import logging
 
 log = logging.getLogger(__name__)
@@ -21,9 +21,6 @@ class BaseFactory(SQLAlchemyModelFactory):
         check_cls = model
         if model in [Plugin, Source, PluginModel, Metric]:
             check_cls = UserItem
-
-        if model in [Blob, TimePoint]:
-            check_cls = Data
 
         pk = getattr(check_cls, "id")
         pks = session.query(pk).all()
@@ -64,6 +61,7 @@ class UserFactory(BaseFactory):
 
     username = factory.Sequence(lambda n: u'User %d' % n)
     email = factory.Sequence(lambda n: u'Email %d' % n)
+    password = "testtest"
 
     @factory.post_generation
     def plugins(self, create, extracted, **kwargs):
@@ -74,23 +72,6 @@ class UserFactory(BaseFactory):
             for plugin in extracted:
                 self.plugins.append(plugin)
 
-    @factory.post_generation
-    def metrics(self, create, extracted, **kwargs):
-        if not create:
-            return
-
-        if extracted:
-            for metric in extracted:
-                self.metrics.append(metric)
-
-    @factory.post_generation
-    def sources(self, create, extracted, **kwargs):
-        if not create:
-            return
-
-        if extracted:
-            for source in extracted:
-                self.sources.append(source)
 
 class UserItemFactory(BaseFactory):
     name = factory.Sequence(lambda n: u"Item %d" % n)
@@ -109,16 +90,11 @@ class SourceFactory(UserItemFactory):
 class PluginModelFactory(UserItemFactory):
     FACTORY_FOR = PluginModel
 
-class DataFactory(BaseFactory):
+class PluginDataFactory(BaseFactory):
+    FACTORY_FOR = PluginData
     date = datetime.now()
     data = None
 
     source = factory.SubFactory(SourceFactory)
     metric = factory.SubFactory(MetricFactory)
     plugin_model = factory.SubFactory(PluginModelFactory)
-
-class TimePointFactory(DataFactory):
-    FACTORY_FOR = TimePoint
-
-class BlobFactory(DataFactory):
-    FACTORY_FOR = Blob

@@ -1,4 +1,4 @@
-from models import Metric, Source, Plugin, TimePoint, Blob, PluginModel
+from models import Metric, Source, Plugin, PluginData, PluginModel
 from core.plugins.lib.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
 from core.util import InvalidObjectException, get_cls
 from core.database.permissions import PermissionsManager
@@ -34,7 +34,7 @@ class DBManager(BaseManager):
         data = obj.get_data()
 
         metric = get_cls(self.session, Metric, obj.metric_proxy)
-        source = get_cls(self.session, Source, obj.source_proxy)
+        source = get_cls(self.session, Source, obj.source_proxy, create=True)
 
         attribs = {
             'source': source,
@@ -65,13 +65,8 @@ class DBManager(BaseManager):
         attribs = self.setup_model(obj)
         mod = obj.model_cls(**attribs)
 
-        try:
-            self.session.add(mod)
-            self.session.commit()
-        except IntegrityError:
-            log.exception("Found a duplicate record.")
-            self.session.rollback()
-            raise DuplicateRecord()
+        self.session.add(mod)
+        self.commit()
 
         obj.id = mod.id
         obj.hashkey = mod.hashkey
@@ -88,12 +83,18 @@ class DBManager(BaseManager):
             raise InvalidObjectException()
 
     def commit(self):
-        self.session.commit()
+        try:
+            self.session.commit()
+        except IntegrityError:
+            log.exception("Found a duplicate record.")
+            self.session.rollback()
+            raise DuplicateRecord()
 
     def delete(self, obj):
         mod = self.find_model(obj, id=obj.id)
         if self.perm_manager.check_perms(mod, "delete"):
             self.session.delete(mod)
+            self.commit()
         return obj
 
     def update(self, obj):
@@ -102,14 +103,24 @@ class DBManager(BaseManager):
             for v in self.modify_vals:
                 setattr(mod, v, getattr(obj, v))
             mod.data = obj.get_data()
+            self.commit()
         return obj
 
-    def _query_base(self, plugin_proxy=None, metric_proxy=None, query_cls=TimePoint, plugin_model_proxy=None):
+    def query_models(self, plugin_proxy=None, metric_proxy=None, query_cls=PluginData):
+        models = self.session.query(PluginModel).order_by("date")
+        if plugin_proxy is not None:
+            plugin = get_cls(self.session, Plugin, plugin_proxy, attrs=["hashkey"])
+            models = models.filter(getattr(query_cls, "plugin") == plugin)
+
+        if metric_proxy is not None:
+            metric = get_cls(self.session, Metric, metric_proxy)
+            models = models.filter(getattr(query_cls, "metric") == metric)
+        return models.distinct()
+
+    def _query_base(self, plugin_proxy=None, metric_proxy=None, query_cls=PluginData, plugin_model_proxy=None):
         query = self.session.query(query_cls).order_by("date")
         if self.user is not None:
             query = query.filter(getattr(query_cls, "user") == self.user)
-        elif self.group is not None:
-            query = query.filter(getattr(query_cls, "group") == self.group)
 
         query = query.order_by(query_cls.date.asc())
         if plugin_proxy is not None:
@@ -161,7 +172,7 @@ class DBManager(BaseManager):
                 tps.append(translation)
         return tps
 
-    def query_range(self, query_column, model_cls, plugin_proxy=None, metric_proxy=None, start=None, end=None, plugin_model_proxy=None):
+    def _query_range(self, query_column, model_cls, plugin_proxy=None, metric_proxy=None, start=None, end=None, plugin_model_proxy=None):
         query = self._query_base(plugin_proxy, metric_proxy, query_cls=model_cls, plugin_model_proxy=plugin_model_proxy)
         if start is not None:
             query = query.filter(getattr(model_cls, query_column) >= start)
@@ -170,7 +181,7 @@ class DBManager(BaseManager):
 
         return self.translate_objects(query.all())
 
-    def query_filter(self, model_cls, plugin_proxy=None, metric_proxy=None, plugin_model_proxy=None, first=False, last=False, **kwargs):
+    def _query_filter(self, model_cls, plugin_proxy=None, metric_proxy=None, plugin_model_proxy=None, first=False, last=False, **kwargs):
         query = self._query_base(plugin_proxy, metric_proxy, query_cls=model_cls, plugin_model_proxy=plugin_model_proxy)
         for attr, value in kwargs.items():
             query = query.filter(getattr(model_cls, attr) == value)
@@ -190,47 +201,33 @@ class DBManager(BaseManager):
 
         return self.translate_objects(query.all())
 
-    def query_time_range(self, query_column, plugin_proxy=None, metric_proxy=None, start=None, end=None):
-        return self.query_range(query_column, TimePoint, plugin_proxy, metric_proxy, start, end)
+    def query_range(self, query_column, plugin_proxy=None, metric_proxy=None, start=None, end=None):
+        return self._query_range(query_column, PluginData, plugin_proxy, metric_proxy, start, end)
 
-    def query_time_filter(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(TimePoint, plugin_proxy, metric_proxy, **kwargs)
+    def query_filter(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self._query_filter(PluginData, plugin_proxy, metric_proxy, **kwargs)
 
-    def query_blob_range(self, query_column, plugin_proxy=None, metric_proxy=None, start=None, end=None):
-        return self.query_range(query_column, Blob, plugin_proxy, metric_proxy, start, end)
+    def query_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self._query_filter(PluginData, plugin_proxy, metric_proxy, last=True, **kwargs)
 
-    def query_blob_filter(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(Blob, plugin_proxy, metric_proxy, **kwargs)
-
-    def query_blob_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(Blob, plugin_proxy, metric_proxy, last=True, **kwargs)
-
-    def query_blob_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(Blob, plugin_proxy, metric_proxy, first=True, **kwargs)
-
-    def query_time_last(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(TimePoint, plugin_proxy, metric_proxy, last=True, **kwargs)
-
-    def query_time_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
-        return self.query_filter(TimePoint, plugin_proxy, metric_proxy, first=True, **kwargs)
+    def query_first(self, plugin_proxy=None, metric_proxy=None, **kwargs):
+        return self._query_filter(PluginData, plugin_proxy, metric_proxy, first=True, **kwargs)
 
     def get_query_class(self, obj):
-        from core.plugins.lib.models import TimePointBase, BlobBase
-        if issubclass(obj, TimePointBase):
-            query_cls = TimePoint
-        elif issubclass(obj, BlobBase):
-            query_cls = Blob
+        from core.plugins.lib.models import PluginDataModel
+        if issubclass(obj, PluginDataModel):
+            query_cls = PluginData
         else:
             raise InvalidObjectException()
         return query_cls
 
     def query_class_filter(self, cls, **kwargs):
         query_cls = self.get_query_class(cls)
-        return self.query_filter(query_cls, plugin_model_proxy=cls.plugin_model_proxy, **kwargs)
+        return self._query_filter(query_cls, plugin_model_proxy=cls.plugin_model_proxy, **kwargs)
 
     def query_class_range(self, query_column, cls, start=None, end=None):
         query_cls = self.get_query_class(cls)
-        return self.query_range(query_column, query_cls, plugin_model_proxy=cls.plugin_model_proxy, start=start, end=end)
+        return self._query_range(query_column, query_cls, plugin_model_proxy=cls.plugin_model_proxy, start=start, end=end)
 
     def register_plugin(self, plugin_cls):
         plugin_proxy = PluginProxy(name=plugin_cls.name, hashkey=plugin_cls.hashkey)

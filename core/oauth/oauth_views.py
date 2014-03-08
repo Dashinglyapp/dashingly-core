@@ -1,15 +1,19 @@
-from flask import Blueprint,  request, url_for, session, render_template, jsonify
+from flask import Blueprint, jsonify
 from flask.ext.login import current_user
 from flask.ext.security import login_required
 from flask.views import MethodView
 from flask_oauthlib.client import OAuth
 import os
-from core.util import append_container, DEFAULT_SECURITY
+from core.util import append_container, DEFAULT_SECURITY, get_context_for_scope
 from realize import settings
-from core.oauth.base import OauthBase
+from core.oauth.base import OauthBase, state_token_required
+from flask.ext.restful import Resource, Api
+from flask.ext.restful import reqparse
+from flask_restful_swagger import swagger
 
 oauth_views = Blueprint('oauth_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
 oauth = OAuth(oauth_views)
+api = swagger.docs(Api(oauth_views), api_spec_url=settings.API_SPEC_URL)
 
 oauth_handlers = settings.OAUTH_CONFIG.keys()
 
@@ -42,17 +46,18 @@ for handler in oauth_handlers:
             obj = auth(handler_obj)
 
             login = DEFAULT_SECURITY(getattr(obj, "login"))
-            auth_handler = authorized_handler(DEFAULT_SECURITY(getattr(obj, "authorized")))
+            auth_handler = authorized_handler(state_token_required(getattr(obj, "authorized")))
             token = token_getter(getattr(obj, "token"))
             handlers[handler] = handler_obj
             oauth_views.add_url_rule(login_url, login_route_name, view_func=login)
             oauth_views.add_url_rule(authorize_url, auth_route_name, view_func=auth_handler)
 
-class Authorizations(MethodView):
+class Authorizations(Resource):
     decorators = [DEFAULT_SECURITY]
 
-    def get(self):
-        auth = current_user.authorizations
+    def get(self, scope, hashkey):
+        context, mod = get_context_for_scope(scope, hashkey)
+        auth = mod.authorizations
         current_auth = {}
         for a in auth:
             current_auth[a.name] = auth
@@ -67,6 +72,6 @@ class Authorizations(MethodView):
             )
             auth_schema.append(auth_scheme)
 
-        return jsonify(append_container(auth_schema, name="authorizations", tags=["system"]))
+        return auth_schema
 
-oauth_views.add_url_rule('/authorizations', view_func=Authorizations.as_view('authorizations'))
+api.add_resource(Authorizations, '/api/v1/<string:scope>/<string:hashkey>/authorizations')

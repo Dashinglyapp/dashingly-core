@@ -1,12 +1,16 @@
-from core.database.models import TimePoint, Blob
+from core.database.models import PluginData
 from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from fields import Field, FloatField, DictField, DateTimeField, IntegerField
 import json
+from realize.log import logging
+
+log = logging.getLogger(__name__)
 
 class DuplicateRecord(Exception):
     pass
 
 class ModelBase(object):
+    reserved_keys = ["id", "hashkey", "date", "created", "modified"]
     id = IntegerField()
     hashkey = Field()
     date = DateTimeField()
@@ -37,24 +41,14 @@ class ModelBase(object):
                 fields_list.append(prop)
         return fields_list
 
-class TimePointBase(ModelBase):
-    model_cls = TimePoint
-    data = Field()
-
-    def get_data(self):
-        return self.data
-
-    def set_data(self, data):
-        self.data = data
-
-class BlobBase(ModelBase):
-    model_cls = Blob
+class PluginDataModel(ModelBase):
+    model_cls = PluginData
 
     def get_fields(self):
         cls = self.__class__
         fields = []
         for f in dir(cls):
-            if isinstance(getattr(cls, f), Field):
+            if isinstance(getattr(cls, f), Field) and f not in self.reserved_keys:
                 fields.append(f)
         return fields
 
@@ -70,7 +64,11 @@ class BlobBase(ModelBase):
         return json.dumps(data)
 
     def set_data(self, data):
-        data = json.loads(data)
+        try:
+            data = json.loads(data)
+        except Exception:
+            log.error("Could not load data.")
+            data = {}
 
         for f in self.get_fields():
             if f in data:

@@ -2,50 +2,51 @@ import hashlib
 from wtforms import TextField
 from core.manager import ExecutionContext
 from core.plugins.lib.fields import IntegerField, Field
-from core.plugins.lib.forms import SettingsFormWidget
+from core.plugins.lib.views.forms import SettingsFormView
 from core.tests.base import RealizeTest
 from core.tests.factories import UserFactory
-from core.plugins.lib.models import BlobBase
+from core.plugins.lib.models import PluginDataModel
 from core.plugins.lib.proxies import MetricProxy, SourceProxy
 from core.plugins.lib.base import BasePlugin
 from manager import PluginManager
-from lib.views import WidgetView, ModelChartWidget
-from realize import test_settings as settings
+from lib.views.base import View
+from lib.views.charts import ModelChartView
 from realize.log import logging
+from realize import test_settings as settings
 
 log = logging.getLogger(__name__)
 
-class TestBlobModel(BlobBase):
+class TestModel(PluginDataModel):
     metric_proxy = MetricProxy(name="test1")
     source_proxy = SourceProxy(name='test1')
 
     number = IntegerField()
 
-class SettingsModel(BlobBase):
+class SettingsModel(PluginDataModel):
     metric_proxy = MetricProxy(name="settings")
     source_proxy = SourceProxy(name="self")
     name = Field()
 
-class TestSettingsForm(SettingsFormWidget):
+class TestSettingsForm(SettingsFormView):
     model = SettingsModel
     setting_name = TextField(description="Your name or something like it.")
 
-class TestModelWidget(ModelChartWidget):
+class TestModelView(ModelChartView):
     name = 'test_chart'
     description = 'A super awesome test chart.'
-    model = TestBlobModel
+    model = TestModel
     y_data_field = 'number'
     x_data_field = 'date'
 
-class TestWidgetView(WidgetView):
+class TestView(View):
     name = "test"
-    children = [TestModelWidget, TestSettingsForm]
+    children = [TestModelView, TestSettingsForm]
 
 class TestPlugin(BasePlugin):
     name = "test"
     hashkey = "1"
-    models = [TestBlobModel, SettingsModel]
-    views = [TestWidgetView]
+    models = [TestModel, SettingsModel]
+    views = [TestView]
     settings_form = TestSettingsForm
 
 class PluginManagerTest(RealizeTest):
@@ -64,15 +65,14 @@ class PluginManagerTest(RealizeTest):
         manager.remove(plugin_key)
         self.assertEqual(len(user.plugins), 0)
 
-    def generate_widget_url(self, plugin_hashkey, view_name):
+    def generate_view_url(self, plugin_hashkey, view_name):
         key = hashlib.sha224("{0}{1}".format(plugin_hashkey, view_name)).hexdigest()[:settings.VIEW_HASHKEY_LENGTH]
-        view_route = "views/{0}".format(key)
-        return view_route
+        return key
 
     def test_get_route(self):
         context = ExecutionContext(user=self.plugin_info['1']['user'], plugin=self.plugin_info['1']['plugin'])
         manager = PluginManager(context)
-        response = manager.call_route_handler(self.generate_widget_url('1', 'test'), "get", {})
+        response = manager.call_route_handler(self.generate_view_url('1', 'test'), "get", {})
 
         self.assertEqual(response.status_code, 200)
 
@@ -80,8 +80,8 @@ class PluginManagerTest(RealizeTest):
         context = ExecutionContext(user=self.plugin_info['1']['user'], plugin=self.plugin_info['1']['plugin'])
         manager = PluginManager(context)
 
-        # Should return the response from the widget.
-        response = manager.get_settings(self.plugin_info['1']['plugin'].hashkey, {})
-        self.assertEqual(response.status_code, 200)
+        # Should return the response from the view.
+        response = manager.get_settings(self.plugin_info['1']['plugin'].hashkey)
+        self.assertTrue(isinstance(response, dict))
 
 
