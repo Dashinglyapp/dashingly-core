@@ -6,7 +6,7 @@ from flask_oauthlib.client import OAuth
 import os
 from core.util import append_container, DEFAULT_SECURITY, get_context_for_scope
 from realize import settings
-from core.oauth.base import OauthBase, state_token_required
+from core.oauth.base import state_token_required, OauthV1Base, OauthV2Base
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import reqparse
 from flask_restful_swagger import swagger
@@ -41,9 +41,9 @@ for handler in oauth_handlers:
 
     login_urls[handler] = login_url
 
-    for auth in OauthBase.__subclasses__():
+    for auth in OauthV1Base.__subclasses__() + OauthV2Base.__subclasses__():
         if auth.handler == handler:
-            obj = auth(handler_obj)
+            obj = auth(handler_obj, handler_settings)
 
             login = DEFAULT_SECURITY(getattr(obj, "login"))
             auth_handler = authorized_handler(state_token_required(getattr(obj, "authorized")))

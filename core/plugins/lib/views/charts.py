@@ -56,3 +56,41 @@ class ModelChartView(ChartView):
             'x': x,
             'y': [y]
         }
+
+class DailyCountChartView(ChartView):
+    model = None
+    x_label = None
+    y_label = None
+    x_description = None
+    y_description = None
+    x_name = None
+    y_name = None
+    x_data_field = None
+
+    def get_chart_points(self, data):
+        start = data.get('start', None)
+        end = data.get('end', None)
+
+        data = self.manager.query_class_range("date", self.model, start=start, end=end)
+
+        info = {}
+        for d in data:
+            tz_date = self.convert_to_local_timezone(getattr(d, self.x_data_field))
+            date_obj = tz_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            date_str = date_obj.isoformat()
+            if date_str in info:
+                info[date_str] += 1
+            else:
+                info[date_str] = 1
+
+        x = info.keys()
+        x.sort()
+        y = [info[i] for i in x]
+
+        x = LineDescriptor(type=DataTypes.integer, label=self.x_label, description=self.x_name, name=self.x_name, data=x)
+        y = LineDescriptor(type=DataTypes.date, label=self.y_label, description=self.y_name, name=self.y_name, data=y)
+
+        return {
+            'x': x,
+            'y': [y]
+        }

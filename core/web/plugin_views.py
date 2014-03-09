@@ -67,8 +67,9 @@ class PluginActionView(BasePluginView):
         return runner
 
     def get_task_url(self, task_id):
+        from core.tasks.task_views import TaskStatus
         if task_id is not None:
-            return url_for('task_views.task_status', task_id=task_id)
+            return api_url_for('task_views', TaskStatus,  task_id=task_id)
         return None
 
     def add(self, scope, hashkey, plugin_hashkey):
@@ -117,6 +118,16 @@ api.add_resource(PluginActionView, '/api/v1/<string:scope>/<string:hashkey>/plug
 
 class PluginViewsList(BasePluginView):
 
+    def get_url(self, scope, hashkey, plugin_key, view_key):
+        return api_url_for(
+                'plugin_views',
+                PluginViewsDetail,
+                scope=scope,
+                hashkey=hashkey,
+                plugin_hashkey=plugin_key,
+                view_hashkey=view_key
+        )
+
     def get(self, scope, hashkey):
         from core.plugins.loader import plugins
         context, mod = get_context_for_scope(scope, hashkey)
@@ -127,6 +138,7 @@ class PluginViewsList(BasePluginView):
                 context.plugin = p
                 manager = ViewManager(context)
                 data = manager.get_meta(v.hashkey)
+                data['url'] = self.get_url(scope, hashkey, p.hashkey, v.hashkey)
                 user_views.append(data)
 
         return user_views

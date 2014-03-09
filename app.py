@@ -47,7 +47,6 @@ def register_blueprints(app):
         bp.config = app.config
 
 def register_extensions(app):
-    csrf.init_app(app)
     oauth.init_app(app)
     babel.init_app(app)
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -94,7 +93,6 @@ def token_loader(token, max_age=settings.MAX_TOKEN_AGE):
 app = create_app()
 api = restful.Api()
 oauth = OAuth()
-csrf = CsrfProtect()
 babel = Babel()
 celery = make_celery(app)
 

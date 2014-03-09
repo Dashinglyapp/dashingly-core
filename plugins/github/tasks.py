@@ -2,7 +2,7 @@ from core.plugins.lib.models import DuplicateRecord
 from core.plugins.lib.tasks import TaskBase, Interval
 from core.plugins.lib.proxies import TaskProxy
 from datetime import datetime, timedelta
-from plugins.github.models import GithubCommits, DailyCommits
+from plugins.github.models import GithubCommits
 from core.plugins.lib.proxies import MetricProxy
 from plugins.github import manifest
 import pytz
@@ -52,12 +52,3 @@ class ScrapeTask(TaskBase):
                     self.manager.add(obj)
                 except DuplicateRecord:
                     pass
-
-            for c in user_commits:
-                date = c['commit']['author']['date']
-                date_obj = parser.parse(date)
-                date_obj = date_obj.replace(hour=0, minute=0, second=0, microsecond=0).replace(tzinfo=None)
-                daily_commits = DailyCommits(date=date_obj, count=0)
-                commits = self.manager.get_or_create(daily_commits)
-                commits.count += 1
-                self.manager.update(commits)

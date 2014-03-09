@@ -87,7 +87,7 @@ class PluginManager(BaseManager):
         # If we are operating on a user, run the setup actions.
         setup_id = None
         if plugin_cls.setup_task is not None and self.user is not None:
-            setup_id = self.run_task(plugin_hashkey, plugin_cls.setup_task)
+            setup_id = self.run_task(plugin_hashkey, plugin_cls.setup_task.task_proxy)
         db.session.commit()
         return dict(task_id=setup_id)
 
@@ -116,7 +116,7 @@ class PluginManager(BaseManager):
         # Run removal tasks if there is a user.
         remove_id=None
         if plugin_cls.remove_task is not None and self.user is not None:
-            remove_id=self.run_task(plugin_hashkey, plugin_cls.remove_task)
+            remove_id = self.run_task(plugin_hashkey, plugin_cls.remove_task.task_proxy)
         db.session.commit()
         return dict(task_id=remove_id)
 

@@ -2,6 +2,9 @@ from app import celery
 from core.database.models import User, Plugin, Group
 from core.manager import ExecutionContext
 from core.tasks.manager import TaskManager
+from realize.log import logging
+
+log = logging.getLogger(__name__)
 
 class InvalidZoneException(Exception):
     pass
@@ -55,6 +58,7 @@ def run_delayed_task(plugin_hashkey, task_proxy, user_id=None, group_id=None):
     tasks = wrapper.plugin.tasks
     for task in tasks:
         if task.task_proxy.name == task_proxy.name:
+            log.info(task)
             manager.run(task)
 
 @celery.task()

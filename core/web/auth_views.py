@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, after_this_request, current_app
 from flask.ext.security.utils import md5
-from app import csrf
 from wtforms_json import MultiDict
 from core.util import append_container, DEFAULT_SECURITY
 from realize import settings
@@ -65,6 +64,24 @@ class Login(Resource):
 
         return form.as_json()
 
+    @swagger.operation(
+        parameters=[
+            {
+                "name": "email",
+                "description": "Email for the user.",
+                "required": True,
+                "dataType": "string",
+                "paramType": "string"
+            },
+            {
+                "name": "password",
+                "description": "Password for the user",
+                "required": True,
+                "dataType": "string",
+                "paramType": "string"
+            }
+        ])
+
     def post(self):
         if hasattr(request, 'json') and request.json is not None:
             form = self.form_class(MultiDict(request.json))
@@ -75,6 +92,7 @@ class Login(Resource):
             login_user(form.user, remember=form.remember.data)
             after_this_request(_commit)
 
+            # This returns the response and the status code.  See function.
             return authentication_response(form)
 
         return form.as_json(), 400
@@ -99,6 +117,25 @@ class Register(Resource):
 
         return form.as_json()
 
+
+    @swagger.operation(
+            parameters=[
+                {
+                    "name": "email",
+                    "description": "Email for the user.",
+                    "required": True,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "password",
+                    "description": "Password for the user",
+                    "required": True,
+                    "dataType": "string",
+                    "paramType": "string"
+                }
+            ])
+
     def post(self):
         """
         Registers a user.
@@ -118,6 +155,7 @@ class Register(Resource):
                 after_this_request(_commit)
                 login_user(user)
 
+            # This returns the response and the status code.  See function.
             return authentication_response(form)
 
         return form.as_json(), 400
@@ -145,7 +183,17 @@ class AuthenticationCheck(Resource):
     """
     Checks if the user is authenticated.
     """
-    method_decorators = [csrf.exempt]
+
+    @swagger.operation(
+        parameters=[
+            {
+                "name": "token",
+                "description": "The authentication token to check.",
+                "required": True,
+                "dataType": "string",
+                "paramType": "string"
+            }
+        ])
 
     def post(self):
         """

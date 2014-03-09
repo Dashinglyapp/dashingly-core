@@ -58,6 +58,14 @@ OAUTH_CONFIG = {
         'access_token_method': 'POST',
         'access_token_url': 'https://graph.facebook.com/oauth/access_token',
         'authorize_url': 'https://graph.facebook.com/oauth/authorize'
+    },
+    'fitbit': {
+        'request_token_params': {'scope': ''},
+        'base_url': 'http://api.fitbit.com/',
+        'request_token_url': 'http://api.fitbit.com/oauth/request_token',
+        'access_token_method': 'POST',
+        'access_token_url': 'http://api.fitbit.com/oauth/access_token',
+        'authorize_url': 'http://www.fitbit.com/oauth/authorize'
     }
 }
 
@@ -68,6 +76,10 @@ VIEW_HASHKEY_LENGTH = 20
 RESOURCE_DATA_VERSION = 1
 API_VERSION = ".1"
 API_SPEC_URL = "/api/v1/spec"
+
+DEFAULT_TIMEZONE = "UTC"
+
+WTF_CSRF_ENABLED = False
 
 try:
     from realize.private import *

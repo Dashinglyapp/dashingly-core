@@ -13,7 +13,6 @@ from flask.ext.restful import reqparse
 from flask_restful_swagger import swagger
 
 from realize.log import logging
-from app import csrf
 log = logging.getLogger(__name__)
 
 resource_views = Blueprint('resource_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
@@ -31,7 +30,7 @@ class BaseResourceView(Resource):
         )
 
 class ResourceView(BaseResourceView):
-    method_decorators = [csrf.exempt, DEFAULT_SECURITY]
+    method_decorators = [DEFAULT_SECURITY]
 
     def get(self, scope, hashkey):
         from app import db

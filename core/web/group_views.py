@@ -72,7 +72,7 @@ class GroupDetailView(BaseGroupView):
 api.add_resource(GroupDetailView, '/api/v1/group/<string:hashkey>')
 
 class UserGroupView(BaseGroupView):
-    def get(self):
+    def get(self, user_hashkey):
         data = []
         for g in current_user.groups:
             data.append(self.convert_group(g))

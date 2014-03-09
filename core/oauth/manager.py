@@ -1,9 +1,12 @@
 from core.manager import BaseManager
 from core.plugins.lib.permissions import AuthorizationPermission
-from requests_oauthlib import OAuth2Session
+from requests_oauthlib import OAuth2Session, OAuth1Session
 from realize import settings
 
 class AuthorizationDoesNotExist(Exception):
+    pass
+
+class InvalidOauthVersion(Exception):
     pass
 
 class AuthorizationManager(BaseManager):
@@ -25,7 +28,21 @@ class AuthorizationManager(BaseManager):
                 else:
                     authorization = authorization[-1]
                 client_data = getattr(settings, "{0}_SECRET".format(name.upper()))
-                session = OAuth2Session(client_data['consumer_key'], token=authorization.access_token)
-                session._client.access_token = authorization.access_token
+                if authorization.version == 1:
+                    session = OAuth1Session(
+                        client_data['consumer_key'],
+                        client_secret=client_data['consumer_secret'],
+                        resource_owner_key=authorization.oauth_token,
+                        resource_owner_secret=authorization.oauth_token_secret
+                    )
+                elif authorization.version == 2:
+                    session = OAuth2Session(
+                        client_data['consumer_key'],
+                        token=authorization.access_token
+                    )
+                    session._client.access_token = authorization.access_token
+                else:
+                    raise InvalidOauthVersion()
+
                 return session
         return None

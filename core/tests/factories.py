@@ -62,6 +62,7 @@ class UserFactory(BaseFactory):
     username = factory.Sequence(lambda n: u'User %d' % n)
     email = factory.Sequence(lambda n: u'Email %d' % n)
     password = "testtest"
+    active = True
 
     @factory.post_generation
     def plugins(self, create, extracted, **kwargs):
