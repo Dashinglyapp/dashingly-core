@@ -22,6 +22,7 @@ class ChartView(View):
         return {
             'x': chart_points['x'].__dict__,
             'y': [y.__dict__ for y in chart_points['y']],
+            'additional_info': chart_points.get('additional_info', None),
             }
 
 class ModelChartView(ChartView):

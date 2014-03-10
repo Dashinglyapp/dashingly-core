@@ -10,6 +10,8 @@ from flask_wtf.csrf import CsrfProtect
 from werkzeug.exceptions import default_exceptions
 from werkzeug.exceptions import HTTPException
 from flask.ext import restful
+from flask.ext.admin import Admin
+from flask.ext.admin.contrib.sqla import ModelView
 
 def make_celery(app):
     celery = Celery(app.import_name, broker=app.config['BROKER_URL'])
@@ -52,6 +54,16 @@ def register_extensions(app):
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security = Security(app, user_datastore)
 
+def initialize_admin(app):
+    from core.web.admin import UserView, PluginView, IndexView, UserProfileView, GroupView, PluginDataView
+    admin.init_app(app)
+    admin.add_view(UserView(db.session))
+    admin.add_view(PluginView(db.session))
+    admin.add_view(UserProfileView(db.session))
+    admin.add_view(GroupView(db.session))
+    admin.add_view(PluginDataView(db.session))
+    admin.index_view = IndexView()
+
 def create_app():
     app = Flask(__name__, template_folder='templates')
     app.config.from_object('realize.settings')
@@ -72,8 +84,16 @@ def create_test_app():
     db.init_app(app)
     register_blueprints(app)
     register_extensions(app)
+    db.create_all(app=app)
 
     return app
+
+def initialize_app(app):
+    register_blueprints(app)
+    register_extensions(app)
+    api.init_app(app)
+    initialize_admin(app)
+    app.extensions['security'].login_manager.token_loader(token_loader)
 
 def token_loader(token, max_age=settings.MAX_TOKEN_AGE):
     """
@@ -94,15 +114,9 @@ app = create_app()
 api = restful.Api()
 oauth = OAuth()
 babel = Babel()
+admin = Admin(name=settings.ADMIN_NAME)
 celery = make_celery(app)
 
 if __name__ == '__main__':
-    register_blueprints(app)
-    register_extensions(app)
-    api.init_app(app)
-    db.create_all(app=app)
-
-    # Patch flask security to expire tokens after a time limit.
-    app.extensions['security'].login_manager.token_loader(token_loader)
-
-    app.run(debug=settings.DEBUG, host="0.0.0.0")
+    initialize_app(app)
+    app.run(debug=settings.DEBUG, host="127.0.0.1")

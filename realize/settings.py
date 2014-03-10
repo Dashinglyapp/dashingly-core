@@ -80,6 +80,7 @@ API_SPEC_URL = "/api/v1/spec"
 DEFAULT_TIMEZONE = "UTC"
 
 WTF_CSRF_ENABLED = False
+ADMIN_NAME = "Realize Admin"
 
 try:
     from realize.private import *

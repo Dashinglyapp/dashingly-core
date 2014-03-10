@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, after_this_request, current_app
 from flask.ext.security.utils import md5
 from wtforms_json import MultiDict
-from core.util import append_container, DEFAULT_SECURITY
+from core.util import append_container, DEFAULT_SECURITY, get_data
 from realize import settings
 import os
 from flask.ext.security import login_required, LoginForm, login_user, ConfirmRegisterForm, logout_user
@@ -83,8 +83,9 @@ class Login(Resource):
         ])
 
     def post(self):
-        if hasattr(request, 'json') and request.json is not None:
-            form = self.form_class(MultiDict(request.json))
+        data = get_data()
+        if data is not None:
+            form = self.form_class(MultiDict(data))
         else:
             form = self.form_class()
 
@@ -142,8 +143,9 @@ class Register(Resource):
         JSON params - username (string), password (string)
         Returns - form with inline errors if error, authentication response otherwise.
         """
-        if hasattr(request, 'json') and request.json is not None:
-            form = self.form_class(MultiDict(request.json))
+        data = get_data()
+        if data is not None:
+            form = self.form_class(MultiDict(data))
         else:
             form = self.form_class()
 

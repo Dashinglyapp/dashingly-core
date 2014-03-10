@@ -42,7 +42,6 @@ class ScrapeTask(TaskBase):
 
             url = "{0}/{1}/date/{2}/today.json".format(self.URL_BASE, k, last_time)
             data = fitbit.get(url).json()
-            print data
             data = data[k.replace("/", "-")]
 
             for d in data:

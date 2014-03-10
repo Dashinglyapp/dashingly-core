@@ -12,8 +12,6 @@ class RealizeTest(TestCase):
     plugin_classes = []
     def create_app(self):
         app = create_test_app()
-        db.app = app
-        db.init_app(app)
         return app
 
     @property

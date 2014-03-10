@@ -7,7 +7,7 @@ from wtforms_json import MultiDict
 from core.database.models import Group
 from core.manager import ExecutionContext
 from core.plugins.views import ViewManager
-from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, InvalidScopeException, api_url_for
+from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, InvalidScopeException, api_url_for, get_data
 from core.web.group_views import InvalidActionException
 from realize import settings
 import os
@@ -27,7 +27,6 @@ class BasePluginView(Resource):
     method_decorators = [DEFAULT_SECURITY]
 
     def convert(self, plugin, scope, hashkey):
-        print PluginActionView.__dict__
         data = dict(
             name=plugin.name,
             description=plugin.description,
@@ -91,7 +90,7 @@ class PluginActionView(BasePluginView):
 
     def save_settings(self, scope, hashkey, plugin_hashkey):
         runner = self.get_runner(scope, hashkey)
-        response = runner.save_settings(plugin_hashkey, MultiDict(request.json))
+        response = runner.save_settings(plugin_hashkey, MultiDict(get_data()))
         return response
 
     def get(self, scope, hashkey, plugin_hashkey, action):
@@ -160,15 +159,15 @@ class PluginViewsDetail(BasePluginView):
 
     def post(self, scope, hashkey, plugin_hashkey, view_hashkey):
         manager = self.get_manager(scope, hashkey, plugin_hashkey)
-        return manager.call_route_handler(view_hashkey, "post", request.json)
+        return manager.call_route_handler(view_hashkey, "post", get_data())
 
     def put(self, scope, hashkey, plugin_hashkey, view_hashkey):
         manager = self.get_manager(scope, hashkey, plugin_hashkey)
-        return manager.call_route_handler(view_hashkey, "put", request.json)
+        return manager.call_route_handler(view_hashkey, "put", get_data())
 
     def patch(self, scope, hashkey, plugin_hashkey, view_hashkey):
         manager = self.get_manager(scope, hashkey, plugin_hashkey)
-        return manager.call_route_handler(view_hashkey, "patch", request.json)
+        return manager.call_route_handler(view_hashkey, "patch", get_data())
 
     def delete(self, scope, hashkey, plugin_hashkey, view_hashkey):
         manager = self.get_manager(scope, hashkey, plugin_hashkey)

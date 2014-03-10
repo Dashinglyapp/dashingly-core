@@ -5,7 +5,7 @@ from flask import url_for
 from flask.views import MethodView
 from core.database.models import ResourceData
 from core.resources.manager import ResourceManager
-from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, api_url_for
+from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, api_url_for, get_data
 from realize import settings
 import os
 from flask.ext.restful import Resource, Api
@@ -39,7 +39,6 @@ class ResourceView(BaseResourceView):
         resources = []
         for r in resource_data:
             data = self.convert(r)
-            print data
             url = api_url_for("resource_views", ResourceDetail, resource_hashkey=data['hashkey'], scope=scope, hashkey=hashkey)
             data['url'] = url
             resources.append(data)
@@ -78,7 +77,7 @@ class ResourceDetail(BaseResourceView):
         return {}, 204
 
     def put(self, scope, hashkey, resource_hashkey):
-        settings = request.json['settings']
+        settings = get_data()['settings']
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
         manager.update_resource(resource_hashkey, settings)

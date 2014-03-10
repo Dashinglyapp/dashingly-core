@@ -23,14 +23,14 @@ Then type:
 ```sh
 vagrant ssh
 cd /vagrant
-python app.py
+python manage.py runserver -hn 0.0.0.0
 ```
 
 Vagrant forwards port 5000 in VirtualBox to [http://127.0.0.1:5000](http://127.0.0.1:5000) on your host machine, so you should be able to click the link and see the Realize UI.  Vagrant keeps folders in sync, so editing things in the project folder will cause the changes to be mirrored and reloaded in Vagrant automatically.
 
-If you want to run delayed tasks, open another ssh connection: (note to self: reconsider the name "delayed" if there are different types of delayed tasks)
+If you want to run delayed tasks (used for data import and analysis), open another ssh connection:
 
-```
+```sh
 vagrant ssh
 cd /vagrant
 celery -A app.celery worker --loglevel=debug -B
@@ -42,11 +42,11 @@ Get started manually (only recommended for Linux)
 
 Manual setup:
 
-```
+```sh
 cd realize-core
 sudo xargs -a apt-packages.txt apt-get install
 pip install -r requirements.txt
-alembic upgrade head
+python manage.py syncdb
 ```
 
 General usage
@@ -54,25 +54,25 @@ General usage
 
 Usage (webserver):
 
-```
-python app.py
+```sh
+python manage.py runserver
 ```
 
 Usage (tasks):
 
-```
+```sh
 celery -A app.celery worker --loglevel=debug -B
 ```
 
 Create migrations (if you change core/database/models.py):
 
-```
+```sh
 alembic revision --autogenerate -m "MESSAGE HERE"
 ```
 
 Run tests:
 
-```
+```sh
 nosetests --with-coverage --cover-package="core" --logging-level="INFO"
 ```
 
@@ -332,3 +332,16 @@ To save data, POST data in this format:
 
 `/groups/GROUP_HASHKEY/add` GET will add you to the specified group.
 `/groups/GROUP_HASHKEY/remove` will remove you from the specified group.
+
+Admin Dashboard
+---------------------------------------------
+
+An admin dashboard is available at `/admin`.  You can use it to edit and create different models, such as Users.
+
+Management Commands
+---------------------------------------------
+
+Management commands are run with `python manage.py COMMAND_NAME`.  There are currently two management commands available.
+
+* runserver -- runs the webserver.  Has option -p for port and -hn for hostname.
+* syncdb -- Migrates the database to the newest version.

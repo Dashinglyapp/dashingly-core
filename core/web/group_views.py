@@ -1,7 +1,9 @@
 from flask import jsonify, request, Blueprint
 from flask.views import MethodView
 from core.database.models import Group
-from core.util import DEFAULT_SECURITY, append_container
+from core.groups.permissions import GroupPermissions
+from core.manager import ExecutionContext
+from core.util import DEFAULT_SECURITY, append_container, get_data
 from flask.ext.login import current_user
 from flask.ext.security import login_required
 from realize import settings
@@ -35,6 +37,10 @@ class BaseGroupView(Resource):
     def get_group_by_key(self, hashkey):
         return Group.query.filter(Group.hashkey == hashkey).first()
 
+group_parser = reqparse.RequestParser()
+group_parser.add_argument('name', type=str, help='The name of the group.')
+group_parser.add_argument('description', type=str, help='The description of the group.')
+
 class GroupView(BaseGroupView):
     """
     Shows what groups are available and makes new ones.
@@ -47,12 +53,27 @@ class GroupView(BaseGroupView):
             data.append(self.convert_group(g))
         return data
 
+    @swagger.operation(
+            parameters=[
+                {
+                    "name": "name",
+                    "description": "Name of the group.",
+                    "required": True,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "description",
+                    "description": "Group description.",
+                    "required": True,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+            ])
+
     def post(self):
         from app import db
-        parser = reqparse.RequestParser()
-        parser.add_argument('name', type=str, help='The name of the group.')
-        parser.add_argument('description', type=str, help='The description of the group.')
-        args = parser.parse_args()
+        args = group_parser.parse_args()
 
         mod = Group(owner=current_user)
         mod.name = args['name']
@@ -68,6 +89,29 @@ class GroupDetailView(BaseGroupView):
     def get(self, hashkey):
         mod = self.get_group_by_key(hashkey)
         return self.convert_group(mod)
+
+    @swagger.operation(
+            parameters=[
+                {
+                    "name": "description",
+                    "description": "Group description.",
+                    "required": False,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                ])
+
+    def put(self, hashkey):
+        from app import db
+        mod = self.get_group_by_key(hashkey)
+        context = ExecutionContext(user=current_user)
+        perm_manager = GroupPermissions(context)
+        perm = perm_manager.check_perms(mod, "update")
+        data = get_data()
+        if perm:
+            mod.description = data.get('description', mod.description)
+            db.session.commit()
+        return self.convert_group(mod), 200
 
 api.add_resource(GroupDetailView, '/api/v1/group/<string:hashkey>')
 
@@ -87,14 +131,14 @@ class UserGroupActionView(BaseGroupView):
         mod = self.get_group_by_key(hashkey)
         current_user.groups.append(mod)
         db.session.commit()
-        return self.convert_group(mod)
+        return self.convert_group(mod), 200
 
     def remove(self, hashkey):
         from app import db
         mod = self.get_group_by_key(hashkey)
         current_user.groups.remove(mod)
         db.session.commit()
-        return {}, 204
+        return {}, 200
 
     def get(self, user_hashkey, group_hashkey, action):
         if action == "add":

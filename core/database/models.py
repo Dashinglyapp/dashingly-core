@@ -70,7 +70,7 @@ class User(db.Model, UserMixin):
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
 
     def __repr__(self):
-        return "<User(name='%s', email='%s', password='%s')>" % (self.username, self.email, self.password)
+        return "<User(name='%s', email='%s')>" % (self.username, self.email)
 
     def get_timezone(self):
         if self.profile is not None and self.profile.timezone is not None:
@@ -151,6 +151,9 @@ class Authorization(db.Model):
 
     created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
     updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return "<Authorization(name='%s', user='%s')>" % (self.name, self.user_id)
 
 class UserItem(db.Model):
     __tablename__ = 'useritem'
@@ -285,7 +288,7 @@ class PluginData(db.Model):
     hashkey = db.Column(db.String(STRING_MAX))
 
     created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
-    modified = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
     def __repr__(self):
         return "<Data(plugin='%s', metric='%s')>" % (self.plugin_id, self.metric_id)
 
