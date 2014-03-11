@@ -4,6 +4,7 @@ from realize.log import logging
 from datetime import datetime
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.security import UserMixin, RoleMixin
+from realize import settings
 
 log = logging.getLogger(__name__)
 db = SQLAlchemy()
@@ -69,7 +70,12 @@ class User(db.Model, UserMixin):
     roles = db.relationship('Role', secondary=roles_users, backref=db.backref('users', lazy='dynamic'))
 
     def __repr__(self):
-        return "<User(name='%s', email='%s', password='%s')>" % (self.username, self.email, self.password)
+        return "<User(name='%s', email='%s')>" % (self.username, self.email)
+
+    def get_timezone(self):
+        if self.profile is not None and self.profile.timezone is not None:
+            return self.profile.timezone
+        return settings.DEFAULT_TIMEZONE
 
 class UserProfile(db.Model):
     __tablename__ = 'userprofile'
@@ -85,6 +91,19 @@ class UserProfile(db.Model):
     def __repr__(self):
         return "<UserProfile(id='%s', user_id='%s')>" % (self.id, self.user_id)
 
+
+class GroupProfile(db.Model):
+    __tablename__ = 'groupprofile'
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
+
+    timezone = db.Column(db.Text)
+    settings = db.Column(db.Text)
+
+    def __repr__(self):
+        return "<GroupProfile(id='%s', user_id='%s')>" % (self.id, self.group_id)
+
 class Group(db.Model):
     __tablename__ = 'groups'
     hash_vals = ["name", "owner"]
@@ -93,6 +112,8 @@ class Group(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     owner = db.relationship("User", backref=db.backref('owned_groups', order_by=id))
     hashkey = db.Column(db.String(STRING_MAX), unique=True)
+
+    profile = db.relationship("GroupProfile", uselist=False, backref="group")
 
     name = db.Column(db.String(STRING_MAX), unique=True)
     description = db.Column(db.Text)
@@ -105,6 +126,11 @@ class Group(db.Model):
     def __repr__(self):
         return "<Group(name='%s', id='%s', owner='%s')>" % (self.name, self.id, self.owner_id)
 
+    def get_timezone(self):
+        if self.profile is not None and self.profile.timezone is not None:
+            return self.profile.timezone
+        return settings.DEFAULT_TIMEZONE
+
 class Authorization(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'name'), )
     hash_vals = ["name"]
@@ -113,6 +139,10 @@ class Authorization(db.Model):
     name = db.Column(db.String(STRING_MAX))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+    version = db.Column(db.Integer)
+
+    oauth_token = db.Column(db.String(STRING_MAX))
+    oauth_token_secret = db.Column(db.String(STRING_MAX))
     access_token = db.Column(db.String(STRING_MAX))
     refresh_token = db.Column(db.String(STRING_MAX))
     expires_in = db.Column(db.String(STRING_MAX))
@@ -121,6 +151,9 @@ class Authorization(db.Model):
 
     created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
     updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return "<Authorization(name='%s', user='%s')>" % (self.name, self.user_id)
 
 class UserItem(db.Model):
     __tablename__ = 'useritem'
@@ -255,7 +288,7 @@ class PluginData(db.Model):
     hashkey = db.Column(db.String(STRING_MAX))
 
     created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
-    modified = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
     def __repr__(self):
         return "<Data(plugin='%s', metric='%s')>" % (self.plugin_id, self.metric_id)
 
@@ -276,8 +309,11 @@ def make_hash(vals):
 def add_hashkey(mapper, connection, target):
     target.hashkey = make_hash([getattr(target, k) for k in target.hash_vals])
 
-def add_profile(mapper, connection, target):
+def add_user_profile(mapper, connection, target):
     target.profile = UserProfile()
+
+def add_group_profile(mapper, connection, target):
+    target.profile = GroupProfile()
 
 # Register hashkey adding events.
 event.listen(PluginData, "before_insert", add_hashkey)
@@ -287,4 +323,5 @@ event.listen(Group, "before_insert", add_hashkey)
 event.listen(Metric, "before_insert", add_hashkey)
 event.listen(Source, "before_insert", add_hashkey)
 event.listen(ResourceData, "before_insert", add_hashkey)
-event.listen(User, "before_insert", add_profile)
+event.listen(User, "before_insert", add_user_profile)
+event.listen(Group, "before_insert", add_group_profile)

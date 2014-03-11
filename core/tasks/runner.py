@@ -2,6 +2,9 @@ from app import celery
 from core.database.models import User, Plugin, Group
 from core.manager import ExecutionContext
 from core.tasks.manager import TaskManager
+from realize.log import logging
+
+log = logging.getLogger(__name__)
 
 class InvalidZoneException(Exception):
     pass

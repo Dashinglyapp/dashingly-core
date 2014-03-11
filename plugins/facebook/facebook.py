@@ -5,6 +5,8 @@ from plugins.facebook import manifest
 from plugins.facebook.tasks import ScrapeTask
 from plugins.facebook.models import NewsFeed
 from datetime import datetime
+from plugins.facebook.views import FacebookView
+
 
 class FacebookPlugin(BasePlugin):
     name = manifest.NAME
@@ -14,3 +16,4 @@ class FacebookPlugin(BasePlugin):
     hashkey = manifest.HASHKEY
     tasks = [ScrapeTask]
     setup_task = ScrapeTask
+    views = [FacebookView]

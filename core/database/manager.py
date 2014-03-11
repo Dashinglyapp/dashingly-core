@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 class DBManager(BaseManager):
     id_vals = ["id", "hashkey"]
     modify_vals = ["date"]
-    get_vals = ["created", "modified"]
+    get_vals = ["created", "updated"]
     vals = id_vals + modify_vals + get_vals
 
     def __init__(self, context, session=None):
@@ -161,6 +161,8 @@ class DBManager(BaseManager):
         for v in self.vals:
             setattr(tp, v, getattr(obj, v))
         tp.set_data(obj.data)
+        if obj.user is not None:
+            tp.user = obj.user.email
 
         return tp
 

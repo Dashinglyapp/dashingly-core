@@ -6,7 +6,7 @@ from flask.views import MethodView
 from wtforms import TextField
 from wtforms_json import MultiDict
 from core.plugins.lib.views.forms import JSONMixin
-from core.util import DEFAULT_SECURITY, append_container
+from core.util import DEFAULT_SECURITY, append_container, get_data
 from realize import settings
 import os
 from realize.log import logging
@@ -19,12 +19,6 @@ log = logging.getLogger(__name__)
 
 user_views = Blueprint('user_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
 api = swagger.docs(Api(user_views), api_spec_url=settings.API_SPEC_URL)
-
-class UserProfileForm(Form, JSONMixin):
-    first_name = TextField('First Name', description="Your first name.")
-    last_name = TextField('Last Name', description="Your last name.")
-    settings = TextField('Settings', description="Settings.")
-    timezone = TextField('Timezone', description="Your timezone.")
 
 class UserProfile(Resource):
     decorators = [DEFAULT_SECURITY]
@@ -45,23 +39,55 @@ class UserProfile(Resource):
             data['settings'] = {}
         except TypeError:
             data['settings'] = {}
-        form = UserProfileForm(**data)
-        return model, form.as_json()
+        return model, data
 
     def get(self, hashkey):
         model, data = self.get_model()
         return data
 
-    def post(self, hashkey):
+    @swagger.operation(
+            parameters=[
+                {
+                    "name": "first_name",
+                    "description": "User first name.",
+                    "required": False,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "last_name",
+                    "description": "User last name.",
+                    "required": False,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "settings",
+                    "description": "User settings in json format.",
+                    "required": False,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "timezone",
+                    "description": "User timezone in timezone format (ie America/New_York).",
+                    "required": False,
+                    "dataType": "string",
+                    "paramType": "string"
+                }
+            ])
+
+    def put(self, hashkey):
         from app import db
         model, model_settings = self.get_model()
+        data = get_data()
         for attr in self.fields:
-            if hasattr(request, "json") and attr in request.json:
-                val = request.json.get(attr, model)
+            if data is not None and attr in data:
+                val = data.get(attr, model)
                 if attr == "settings":
                     val = json.dumps(val)
                 setattr(model, attr, val)
         db.session.commit()
-        return {}, 201
+        return {}, 200
 
 api.add_resource(UserProfile, '/api/v1/user/<string:hashkey>/profile')

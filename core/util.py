@@ -1,6 +1,6 @@
 from flask.ext.login import current_user
 from flask.ext.security import auth_required
-from flask import url_for
+from flask import url_for, request
 from sqlalchemy.exc import IntegrityError
 from core.database.models import Group
 from core.manager import ExecutionContext
@@ -77,3 +77,6 @@ def get_context_for_scope(scope, hashkey):
     else:
         raise InvalidScopeException()
     return context, mod
+
+def get_data():
+    return request.get_json(force=True, silent=True)

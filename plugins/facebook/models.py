@@ -5,7 +5,7 @@ from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 
 class NewsFeed(PluginDataModel):
     metric_proxy = MetricProxy(name="newsfeed")
-    source_proxy = MetricProxy(name="facebook")
+    source_proxy = SourceProxy(name="facebook")
     perms = [Scope(ZonePerm("user", current=True), BlockPerm("plugin", all=True))]
 
     date = DateTimeField()

@@ -1,6 +1,7 @@
 import hashlib
 from flask import url_for, jsonify
 from core.manager import BaseManager
+from core.util import api_url_for
 from realize.settings import VIEW_HASHKEY_LENGTH
 
 def dfs(v):
@@ -21,12 +22,6 @@ class ViewManager(BaseManager):
         for i in xrange(len(views)):
             view = views[i]
             view.hashkey = hashlib.sha224("{0}{1}".format(plugin.hashkey, view.name)).hexdigest()[:VIEW_HASHKEY_LENGTH]
-            view_route = "views/{0}".format(view.hashkey)
-
-            # Cannot use url_for here, because it needs to be called in celery tasks, and celery doesn't have a request to use
-            # to make a URL.  Could fix by specifying server_name, but that seems to heavyweight for now.
-            plugin_path = '/api/v1/plugins/{0}/{1}'.format(plugin.hashkey, view_route)
-            view.path = plugin_path
             view_dict[view.hashkey] = view
         plugin.view_dict = view_dict
 
@@ -43,7 +38,8 @@ class ViewManager(BaseManager):
     def get_meta(self, hashkey):
         view_dict = self.get_plugin(self.plugin.hashkey).view_dict
         view_cls = view_dict[hashkey]
-        return view_cls.meta()
+        meta = view_cls.meta()
+        return meta
 
     def get_settings(self, plugin_hashkey, data):
         plugin_cls = self.get_plugin(plugin_hashkey)

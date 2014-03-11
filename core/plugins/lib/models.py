@@ -15,7 +15,8 @@ class ModelBase(object):
     hashkey = Field()
     date = DateTimeField()
     created = DateTimeField()
-    modified = DateTimeField()
+    updated = DateTimeField()
+    user = Field()
 
     metric_proxy = None
     source_proxy = None

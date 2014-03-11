@@ -36,12 +36,17 @@ def _check_state_token():
 
 class OauthBase(object):
     handler = None
+    version = None
     access_token_name = "access_token"
     refresh_token_name = "refresh_token"
     session_token_name = "generic_token"
 
-    def __init__(self, handler_obj):
+    oauth_token_name = "oauth_token"
+    oauth_token_secret_name = "oauth_token_secret"
+
+    def __init__(self, handler_obj, config):
         self.handler_obj = handler_obj
+        self.config = config
 
     def generate_oauth_state_token(self):
         serializer = get_serializer()
@@ -62,11 +67,14 @@ class OauthBase(object):
                 request.args['error_reason'],
                 request.args['error_description']
             )
-        session[self.session_token_name] = (resp[self.access_token_name], '')
+
         auth = self.get_or_create(
             self.handler,
             access_token=resp.get(self.access_token_name, None),
-            refresh_token=resp.get(self.refresh_token_name, None)
+            refresh_token=resp.get(self.refresh_token_name, None),
+            oauth_token=resp.get(self.oauth_token_name, None),
+            oauth_token_secret=resp.get(self.oauth_token_secret_name, None),
+            version=self.version,
         )
         return redirect(api_url_for("oauth_views", Authorizations, scope="user", hashkey=current_user.hashkey))
 
@@ -86,3 +94,12 @@ class OauthBase(object):
 
     def token(self):
         return session.get(self.session_token_name)
+
+class OauthV2Base(OauthBase):
+    version = 2
+
+class OauthV1Base(OauthBase):
+    version = 1
+
+    def token(self):
+        return session.get('oauth_token'), session.get('oauth_token_secret')

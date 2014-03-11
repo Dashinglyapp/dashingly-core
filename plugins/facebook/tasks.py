@@ -66,7 +66,7 @@ class ScrapeTask(TaskBase):
         if last_m is None:
             last_time = datetime.now() - timedelta(days=365)
         else:
-            last_time = last_m.date
+            last_time = last_m
         last_stamp = timegm(last_time.utctimetuple())
 
         url = "https://graph.facebook.com/me?fields=posts.since({0})".format(last_time.isoformat())
