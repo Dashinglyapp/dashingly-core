@@ -11,4 +11,7 @@ class RunServer(Command):
     )
 
     def run(self, host="127.0.0.1", port=5000):
+        if port is None:
+            port = 5000
+        port = int(port)
         app.run(debug=settings.DEBUG, host=host, port=port)

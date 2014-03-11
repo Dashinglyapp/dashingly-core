@@ -42,8 +42,3 @@ class DailyMoodChart(ModelChartView):
     x_label = 'Date'
     x_name = 'Date'
     y_name = 'Mood'
-
-class GetStuffView(View):
-    name = "get_stuff"
-    description = "Get stuff.  Duh."
-    children = [MoodForm, SurveyForm, DailyMoodChart]

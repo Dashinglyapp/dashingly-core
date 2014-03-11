@@ -82,6 +82,9 @@ DEFAULT_TIMEZONE = "UTC"
 WTF_CSRF_ENABLED = False
 ADMIN_NAME = "Realize Admin"
 
+FRONTEND_DIRECTORY = "frontend"
+FRONTEND_PATH = os.path.join("static", "frontend")
+
 try:
     from realize.private import *
 except:

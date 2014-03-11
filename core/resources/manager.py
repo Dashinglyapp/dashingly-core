@@ -17,7 +17,8 @@ class ResourceManager(BaseManager):
     def create_model(self, settings_dict, name, type):
         from app import db
         model = ResourceData(
-            user=current_user,
+            user=self.user,
+            group=self.group,
             name=name,
             version=settings.RESOURCE_DATA_VERSION,
             type=type,
@@ -49,8 +50,8 @@ class ResourceManager(BaseManager):
             raise IncorrectPermissionsException()
         for d in data:
             model_settings[d] = data[d]
-        model.settings = model_settings
-        db.commit()
+        model.settings = json.dumps(model_settings)
+        db.session.commit()
         return model
 
     def delete_model(self, resource_hashkey):
@@ -59,7 +60,7 @@ class ResourceManager(BaseManager):
         if not self.check_permissions(model, "delete"):
             raise IncorrectPermissionsException()
         model.settings = json.dumps({})
-        db.commit()
+        db.session.commit()
 
     def get_resource(self, resource_hashkey):
         return self.get_model(resource_hashkey)

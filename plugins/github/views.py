@@ -14,8 +14,3 @@ class DailyCommitChart(DailyCountChartView):
     x_name = 'Date'
     y_name = 'Daily commits'
     x_data_field = 'date'
-
-class GithubView(View):
-    name = "github_view"
-    description = "View for github."
-    children = [DailyCommitChart]

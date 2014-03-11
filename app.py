@@ -51,7 +51,6 @@ def register_blueprints(app):
 def register_extensions(app):
     oauth.init_app(app)
     babel.init_app(app)
-    user_datastore = SQLAlchemyUserDatastore(db, User, Role)
     security = Security(app, user_datastore)
 
 def initialize_admin(app):
@@ -116,6 +115,7 @@ oauth = OAuth()
 babel = Babel()
 admin = Admin(name=settings.ADMIN_NAME)
 celery = make_celery(app)
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
 if __name__ == '__main__':
     initialize_app(app)

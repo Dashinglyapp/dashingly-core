@@ -44,6 +44,31 @@ class ResourceView(BaseResourceView):
             resources.append(data)
         return resources
 
+    @swagger.operation(
+            parameters=[
+                {
+                    "name": "name",
+                    "description": "Name of the resource.",
+                    "required": True,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "type",
+                    "description": "Type of the resource.",
+                    "required": True,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "settings",
+                    "description": "Settings to store.",
+                    "required": True,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                ])
+
     def post(self, scope, hashkey):
         parser = reqparse.RequestParser()
         parser.add_argument('name', type=str, help='The name of the resource.')
@@ -68,13 +93,13 @@ class ResourceDetail(BaseResourceView):
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
         model, model_settings = manager.get_resource(resource_hashkey)
-        return model_settings
+        return self.convert(model)
 
     def delete(self, scope, hashkey, resource_hashkey):
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
         manager.delete_resource(resource_hashkey)
-        return {}, 204
+        return {}
 
     def put(self, scope, hashkey, resource_hashkey):
         settings = get_data()['settings']
