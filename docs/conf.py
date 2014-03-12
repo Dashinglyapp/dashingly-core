@@ -47,7 +47,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Realize'
-copyright = u'2014, Vik Paruchuri and Adam Laughlin'
+copyright = u'2014, Realize'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -200,7 +200,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'Realize.tex', u'Realize Documentation',
-   u'Vik Paruchuri and Adam Laughlin', 'manual'),
+   u'Realize', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -230,7 +230,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'realize', u'Realize Documentation',
-     [u'Vik Paruchuri and Adam Laughlin'], 1)
+     [u'Realize'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -244,7 +244,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Realize', u'Realize Documentation',
-   u'Vik Paruchuri and Adam Laughlin', 'Realize', 'One line description of project.',
+   u'Realize', 'Realize', 'One line description of project.',
    'Miscellaneous'),
 ]
 

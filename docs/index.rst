@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 2
 
    overview/index
+   plugins/index
    api/index
    misc/index
 

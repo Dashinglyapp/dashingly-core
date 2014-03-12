@@ -242,7 +242,7 @@ class PluginModel(db.Model):
 class ResourceData(db.Model):
     __tablename__ = "resourcedata"
     __table_args__ = (db.UniqueConstraint('hashkey'), )
-    hash_vals = ["name", "type", "user_id", "group_id"]
+    hash_vals = ["name", "type", "user_id", "group_id", "created"]
 
     id = db.Column(db.Integer, primary_key=True)
     version = db.Column(db.Integer)

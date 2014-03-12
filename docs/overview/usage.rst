@@ -1,4 +1,4 @@
-General usage
+Usage
 ------------------------------------------
 
 There are a few different commands that run various parts of realize.

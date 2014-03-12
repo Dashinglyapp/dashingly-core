@@ -48,9 +48,17 @@ class ResourceManager(BaseManager):
         model, model_settings = self.get_model(resource_hashkey)
         if not self.check_permissions(model, "update"):
             raise IncorrectPermissionsException()
-        for d in data:
-            model_settings[d] = data[d]
-        model.settings = json.dumps(model_settings)
+        for k in data:
+            if k == "settings":
+                try:
+                    data[k] = json.loads(data[k])
+                except Exception:
+                    pass
+                for d in data[k]:
+                    model_settings[d] = data[k][d]
+                model.settings = json.dumps(model_settings)
+            else:
+                setattr(model, k, data[k])
         db.session.commit()
         return model
 
@@ -59,7 +67,7 @@ class ResourceManager(BaseManager):
         model, model_settings = self.get_model(resource_hashkey)
         if not self.check_permissions(model, "delete"):
             raise IncorrectPermissionsException()
-        model.settings = json.dumps({})
+        db.session.delete(model)
         db.session.commit()
 
     def get_resource(self, resource_hashkey):

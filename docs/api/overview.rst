@@ -1,4 +1,4 @@
-API
+Overview
 --------------------------------
 
 Realize-core exposes a full API that different frontends can connect to.  The easiest way to understand the API is to use our browable API feature.

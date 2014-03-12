@@ -32,6 +32,7 @@ class UserProfile(Resource):
             'settings': model.settings,
             'timezone': model.timezone,
             'hashkey': current_user.hashkey,
+            'email': current_user.email,
         }
         try:
             data['settings'] = json.loads(data['settings'])
@@ -83,9 +84,21 @@ class UserProfile(Resource):
         data = get_data()
         for attr in self.fields:
             if data is not None and attr in data:
-                val = data.get(attr, model)
+                val = data.get(attr, getattr(model, attr))
                 if attr == "settings":
-                    val = json.dumps(val)
+                    try:
+                        val = json.loads(val)
+                    except Exception:
+                        pass
+
+                    try:
+                        settings = json.loads(model.settings)
+                    except Exception:
+                        settings = {}
+
+                    for k in val:
+                        settings[k] = val[k]
+                    val = json.dumps(settings)
                 setattr(model, attr, val)
         db.session.commit()
         return {}, 200

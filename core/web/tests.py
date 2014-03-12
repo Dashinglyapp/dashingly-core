@@ -1,5 +1,5 @@
 from core.tests.base import RealizeTest
-from core.tests.factories import UserFactory
+from core.tests.factories import UserFactory, PluginFactory
 from core.database.models import User
 from flask import url_for
 import json
@@ -99,7 +99,6 @@ class UserTest(WebTest):
 
         profile, status = self.get_data(url_name, hashkey=user_data['hashkey'])
         self.assertEqual(profile['timezone'], timezone)
-        profile['settings'] = json.loads(profile['settings'])
         self.assertEqual(profile['settings'], settings)
 
 class GroupTest(WebTest):
@@ -143,6 +142,27 @@ class GroupTest(WebTest):
         groups, status = self.get_data(url_name, user_hashkey=user_data['hashkey'])
         self.assertEqual(len(groups), 1)
 
+    def test_group_plugins(self):
+        from core.plugins.loader import plugins
+        url_name = "plugin_views.scopepluginlist"
+        user_data = self.create_and_login_user()
+        group = self.create_group()
+
+        data, status = self.get_data(url_name, scope="group", hashkey=group['hashkey'])
+        plugin = data[0]
+        factory = PluginFactory(hashkey=plugin['hashkey'], name=plugin['name'])
+
+        plugin_cls = plugins[plugin['hashkey']]
+
+        action_url_name = "plugin_views.pluginactionview"
+        self.get_data(action_url_name, scope="group", hashkey=group['hashkey'], plugin_hashkey=plugin['hashkey'], action="add")
+        data, status = self.get_data(url_name, scope="group", hashkey=group['hashkey'])
+        self.assertTrue(data[0]['installed'])
+
+        view_url = "plugin_views.pluginviewslist"
+        data, status = self.get_data(view_url, scope="group", hashkey=group['hashkey'], plugin_hashkey=plugin['hashkey'])
+        self.assertEqual(len(data), len(plugin_cls.views))
+
 class ResourceTest(WebTest):
     def create_resource(self, user_data):
         url_name = "resource_views.resourceview"
@@ -171,12 +191,37 @@ class ResourceTest(WebTest):
         self.put_data(url_name, data=put_data, scope="user", hashkey=user_data['hashkey'], resource_hashkey=res_data[0]['hashkey'])
 
         data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'], resource_hashkey=res_data[0]['hashkey'])
-        print data
         self.assertTrue('blah' in data['settings'])
 
 class PluginTest(WebTest):
+
     def test_list(self):
-        url_name = "plugin_views.pluginlist"
+        from core.plugins.loader import plugins
+        url_name = "plugin_views.scopepluginlist"
+        user_data = self.create_and_login_user()
+        data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'])
+
+        self.assertEqual(len(data), len(plugins.keys()))
+
+        for d in data:
+            self.assertFalse(d['installed'])
+
+        if len(data) > 0:
+            plugin = data[0]
+            factory = PluginFactory(hashkey=plugin['hashkey'], name=plugin['name'])
+            action_url_name = "plugin_views.pluginactionview"
+
+            self.get_data(action_url_name, scope="user", hashkey=user_data['hashkey'], plugin_hashkey=plugin['hashkey'], action="add")
+            data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'])
+            self.assertTrue(data[0]['installed'])
+
+            self.get_data(action_url_name, scope="user", hashkey=user_data['hashkey'], plugin_hashkey=plugin['hashkey'], action="remove")
+            data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'])
+            self.assertFalse(data[0]['installed'])
+
+
+
+
 
 
 

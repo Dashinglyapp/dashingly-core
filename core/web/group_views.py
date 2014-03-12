@@ -37,10 +37,6 @@ class BaseGroupView(Resource):
     def get_group_by_key(self, hashkey):
         return Group.query.filter(Group.hashkey == hashkey).first()
 
-group_parser = reqparse.RequestParser()
-group_parser.add_argument('name', type=str, help='The name of the group.')
-group_parser.add_argument('description', type=str, help='The description of the group.')
-
 class GroupView(BaseGroupView):
     """
     Shows what groups are available and makes new ones.
@@ -73,11 +69,13 @@ class GroupView(BaseGroupView):
 
     def post(self):
         from app import db
-        args = group_parser.parse_args()
+        data = get_data()
+        name = data.get('name')
+        description = data.get('description')
 
         mod = Group(owner=current_user)
-        mod.name = args['name']
-        mod.description = args['description']
+        mod.name = name
+        mod.description = description
         current_user.groups.append(mod)
         db.session.commit()
         return self.convert_group(mod), 201
