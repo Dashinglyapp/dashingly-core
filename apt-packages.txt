@@ -11,3 +11,4 @@ memcached
 python-dev
 libssl-dev
 libmysqlclient-dev
+npm

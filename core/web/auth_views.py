@@ -212,9 +212,9 @@ class AuthenticationCheck(Resource):
         data = dict(authenticated=authenticated)
         if authenticated:
             data.update(dict(
-                email=current_user.email,
-                hashkey=current_user.hashkey,
-                id=current_user.id,
+                email=user.email,
+                hashkey=user.hashkey,
+                id=user.id,
                 ))
         return data
 

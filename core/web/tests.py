@@ -143,4 +143,41 @@ class GroupTest(WebTest):
         groups, status = self.get_data(url_name, user_hashkey=user_data['hashkey'])
         self.assertEqual(len(groups), 1)
 
+class ResourceTest(WebTest):
+    def create_resource(self, user_data):
+        url_name = "resource_views.resourceview"
+        post_data = {'name': 'test', 'type': 'test', 'settings': {'test': 'test'}}
+        self.post_data(url_name, data=post_data, scope="user", hashkey=user_data['hashkey'])
+
+    def test_resources(self):
+        url_name = "resource_views.resourceview"
+        user_data = self.create_and_login_user()
+        self.create_resource(user_data)
+
+        data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'])
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['name'], 'test')
+
+    def test_resource_detail(self):
+        url_name = "resource_views.resourcedetail"
+        user_data = self.create_and_login_user()
+        self.create_resource(user_data)
+        res_data, status = self.get_data("resource_views.resourceview", scope="user", hashkey=user_data['hashkey'])
+
+        data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'], resource_hashkey=res_data[0]['hashkey'])
+        self.assertEqual(data['name'], 'test')
+
+        put_data = {'settings': {'blah': 'blah'}}
+        self.put_data(url_name, data=put_data, scope="user", hashkey=user_data['hashkey'], resource_hashkey=res_data[0]['hashkey'])
+
+        data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'], resource_hashkey=res_data[0]['hashkey'])
+        print data
+        self.assertTrue('blah' in data['settings'])
+
+class PluginTest(WebTest):
+    def test_list(self):
+        url_name = "plugin_views.pluginlist"
+
+
+
 

@@ -11,8 +11,3 @@ class DailyActivityChart(DailyCountChartView):
     x_name = 'Date'
     y_name = 'Daily activity'
     x_data_field = 'date'
-
-class FacebookView(View):
-    name = "facebook_view"
-    description = "View for facebook."
-    children = [DailyActivityChart]

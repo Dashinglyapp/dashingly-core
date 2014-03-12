@@ -10,6 +10,13 @@ class InvalidOauthVersion(Exception):
     pass
 
 class AuthorizationManager(BaseManager):
+    def get_permissions(self):
+        from core.plugins.loader import plugins
+        plugin = plugins[self.plugin.hashkey]
+        return {
+            'authorizations': [p.name for p in plugin.permissions if isinstance(p, AuthorizationPermission)]
+        }
+
     def get_auth(self, name):
         from core.plugins.loader import plugins
         from app import db

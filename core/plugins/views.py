@@ -14,13 +14,10 @@ def dfs(v):
 
 class ViewManager(BaseManager):
     def set_hashkeys(self, plugin):
-        views = []
-        for v in plugin.views:
-            views += dfs(v)
 
         view_dict = {}
-        for i in xrange(len(views)):
-            view = views[i]
+        for i in xrange(len(plugin.views)):
+            view = plugin.views[i]
             view.hashkey = hashlib.sha224("{0}{1}".format(plugin.hashkey, view.name)).hexdigest()[:VIEW_HASHKEY_LENGTH]
             view_dict[view.hashkey] = view
         plugin.view_dict = view_dict

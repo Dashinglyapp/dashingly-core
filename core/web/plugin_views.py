@@ -6,6 +6,7 @@ from flask.views import MethodView
 from wtforms_json import MultiDict
 from core.database.models import Group
 from core.manager import ExecutionContext
+from core.oauth.manager import AuthorizationManager
 from core.plugins.views import ViewManager
 from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, InvalidScopeException, api_url_for, get_data
 from core.web.group_views import InvalidActionException
@@ -27,19 +28,47 @@ class BasePluginView(Resource):
     method_decorators = [DEFAULT_SECURITY]
 
     def convert(self, plugin, scope, hashkey):
-        data = dict(
-            name=plugin.name,
-            description=plugin.description,
+        data = self.base_convert(plugin)
+        data.update(dict(
             remove_url=api_url_for("plugin_views", PluginActionView, plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="remove"),
             configure_url=api_url_for("plugin_views", PluginActionView, plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="configure"),
             add_url=api_url_for("plugin_views", PluginActionView, plugin_hashkey=plugin.hashkey, scope=scope, hashkey=hashkey, action="add")
+        ))
+        return data
+
+    def base_convert(self, plugin):
+        context = ExecutionContext(plugin=plugin)
+        data = dict(
+            name=plugin.name,
+            description=plugin.description,
+            permissions=AuthorizationManager(context).get_permissions(),
+            hashkey=plugin.hashkey
         )
         return data
 
     def get_group_by_key(self, hashkey):
         return Group.query.filter(Group.hashkey == hashkey).first()
 
-class PluginList(BasePluginView):
+    def get_base_list(self, plugins):
+        plugin_schema = []
+        for p in plugins:
+            plugin = plugins[p]
+            plugin_scheme = self.base_convert(plugin)
+            plugin_schema.append(plugin_scheme)
+
+        return plugin_schema
+
+    def get_url(self, scope, hashkey, plugin_key, view_key):
+            return api_url_for(
+                'plugin_views',
+                PluginViewsDetail,
+                scope=scope,
+                hashkey=hashkey,
+                plugin_hashkey=plugin_key,
+                view_hashkey=view_key
+            )
+
+class ScopePluginList(BasePluginView):
 
     def get(self, scope, hashkey):
         from core.plugins.loader import plugins
@@ -56,7 +85,7 @@ class PluginList(BasePluginView):
 
         return plugin_schema
 
-api.add_resource(PluginList, '/api/v1/<string:scope>/<string:hashkey>/plugins')
+api.add_resource(ScopePluginList, '/api/v1/<string:scope>/<string:hashkey>/plugins')
 
 class PluginActionView(BasePluginView):
 
@@ -115,17 +144,7 @@ class PluginActionView(BasePluginView):
 
 api.add_resource(PluginActionView, '/api/v1/<string:scope>/<string:hashkey>/plugins/<string:plugin_hashkey>/actions/<string:action>')
 
-class PluginViewsList(BasePluginView):
-
-    def get_url(self, scope, hashkey, plugin_key, view_key):
-        return api_url_for(
-                'plugin_views',
-                PluginViewsDetail,
-                scope=scope,
-                hashkey=hashkey,
-                plugin_hashkey=plugin_key,
-                view_hashkey=view_key
-        )
+class ScopeViewsList(BasePluginView):
 
     def get(self, scope, hashkey):
         from core.plugins.loader import plugins
@@ -142,7 +161,25 @@ class PluginViewsList(BasePluginView):
 
         return user_views
 
-api.add_resource(PluginViewsList, '/api/v1/<string:scope>/<string:hashkey>/views')
+api.add_resource(ScopeViewsList, '/api/v1/<string:scope>/<string:hashkey>/views')
+
+class PluginViewsList(BasePluginView):
+
+    def get(self, scope, hashkey, plugin_hashkey):
+        from core.plugins.loader import plugins
+        context, mod = get_context_for_scope(scope, hashkey)
+        views = plugins[plugin_hashkey].views
+
+        context.plugin = plugins[plugin_hashkey]
+        manager = ViewManager(context)
+        user_views = []
+        for v in views:
+            data = manager.get_meta(v.hashkey)
+            data['url'] = self.get_url(scope, hashkey, plugin_hashkey, v.hashkey)
+            user_views.append(data)
+        return user_views
+
+api.add_resource(PluginViewsList, '/api/v1/<string:scope>/<string:hashkey>/plugins/<string:plugin_hashkey>/views')
 
 class PluginViewsDetail(BasePluginView):
 

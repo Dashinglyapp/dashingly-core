@@ -27,3 +27,4 @@ Flask-RESTful==0.2.11
 -e git+https://github.com/realizeapp/flask-restful-swagger.git@610fd1881e09337f55dca0b6e74222493226a12a#egg=flask-restful-swagger
 Flask-Admin==1.0.7
 Flask-Script==0.6.7
+Sphinx==1.2.2
