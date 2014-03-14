@@ -1,3 +1,4 @@
+from core.permissions import BasePermissions
 from core.plugins.lib.scope import Scope, ZonePerm, BlockPerm
 from core.manager import BaseManager
 from realize.log import logging
@@ -10,12 +11,7 @@ class InvalidPermissionsException(Exception):
 class InvalidModelException(Exception):
     pass
 
-class PermissionsManager(BaseManager):
-    def __init__(self, context):
-        super(PermissionsManager, self).__init__(context)
-        self.req_user = self.user
-        self.req_group = self.group
-        self.req_plugin = self.plugin
+class DatabasePermissionsManager(BasePermissions):
 
     def check_update_perms_user(self, perms, obj):
         return self.user_inst and obj.user == self.req_user

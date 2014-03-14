@@ -1,5 +1,5 @@
 from flask.ext.login import current_user
-from core.plugins.views import ViewManager
+from core.views.manager import ViewManager
 from core.util import get_cls
 from core.manager import BaseManager, ExecutionContext
 from flask import jsonify
@@ -38,10 +38,9 @@ class PluginManager(BaseManager):
             return self.group
         return None
 
-    def call_view_handler(self, view_hashkey, method, data):
-        context = ExecutionContext(plugin=self.plugin, user=current_user)
-        view_manager = ViewManager(context)
-        return view_manager.handle_route(view_hashkey, method, data)
+    def call_view_handler(self, view_hashkey, method, data, resource_hashkey):
+        view_manager = ViewManager(self.context)
+        return view_manager.handle_route(view_hashkey, method, data, resource_hashkey)
 
     def call_form_handler(self, path, method, data):
         plugin_cls = self.get_plugin(self.plugin.hashkey)
@@ -56,8 +55,8 @@ class PluginManager(BaseManager):
 
         raise InvalidRouteException()
 
-    def call_route_handler(self, view_hashkey, method, data):
-        return self.call_view_handler(view_hashkey, method, data)
+    def call_route_handler(self, view_hashkey, method, data, resource_hashkey):
+        return self.call_view_handler(view_hashkey, method, data, resource_hashkey)
 
     def run_actions(self, plugin_hashkey, action_name, **kwargs):
         plugin_cls = self.get_plugin(plugin_hashkey)

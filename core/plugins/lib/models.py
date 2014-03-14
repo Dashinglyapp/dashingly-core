@@ -62,15 +62,9 @@ class PluginDataModel(ModelBase):
         data = {}
         for f in self.get_fields():
             data[f] = self.get_to_json(f)(getattr(self, f))
-        return json.dumps(data)
+        return data
 
     def set_data(self, data):
-        try:
-            data = json.loads(data)
-        except Exception:
-            log.error("Could not load data.")
-            data = {}
-
         for f in self.get_fields():
             if f in data:
                 setattr(self, f, data[f])

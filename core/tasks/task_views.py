@@ -3,7 +3,7 @@ from celery.utils.encoding import safe_repr
 from celery.utils import get_full_cls_name, kwdict
 from flask import Blueprint, jsonify
 from core.util import append_container, DEFAULT_SECURITY
-from realize import settings
+from flask import current_app
 from realize.log import logging
 import os
 from flask.ext.restful import Resource, Api
@@ -12,8 +12,8 @@ from flask_restful_swagger import swagger
 
 log = logging.getLogger(__name__)
 
-task_views = Blueprint('task_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
-api = swagger.docs(Api(task_views), api_spec_url=settings.API_SPEC_URL)
+task_views = Blueprint('task_views', __name__, template_folder=os.path.join(current_app.config['REPO_PATH'], 'templates'))
+api = swagger.docs(Api(task_views), api_spec_url=current_app.config['API_SPEC_URL'])
 
 class TaskStatus(Resource):
     method_decorators = [DEFAULT_SECURITY]

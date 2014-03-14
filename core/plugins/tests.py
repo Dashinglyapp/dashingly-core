@@ -12,7 +12,8 @@ from manager import PluginManager
 from lib.views.base import View
 from lib.views.charts import ModelChartView
 from realize.log import logging
-from realize import test_settings as settings
+from flask import current_app
+from flask.ext.login import login_user, logout_user
 
 log = logging.getLogger(__name__)
 
@@ -65,14 +66,12 @@ class PluginManagerTest(RealizeTest):
         manager.remove(plugin_key)
         self.assertEqual(len(user.plugins), 0)
 
-    def generate_view_url(self, plugin_hashkey, view_name):
-        key = hashlib.sha224("{0}{1}".format(plugin_hashkey, view_name)).hexdigest()[:settings.VIEW_HASHKEY_LENGTH]
-        return key
-
     def test_get_route(self):
         context = ExecutionContext(user=self.plugin_info['1']['user'], plugin=self.plugin_info['1']['plugin'])
+        login_user(self.plugin_info['1']['user'])
         manager = PluginManager(context)
-        response = manager.call_route_handler(self.generate_view_url('1', 'test'), "get", {})
+        response = manager.call_route_handler(self.plugin_info['1']['views']['test'].hashkey, "get", {}, None)
+        logout_user()
 
         self.assertEqual(response.status_code, 200)
 

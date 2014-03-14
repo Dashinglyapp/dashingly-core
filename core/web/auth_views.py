@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, after_this_request, current_app
 from flask.ext.security.utils import md5
 from wtforms_json import MultiDict
-from core.util import append_container, DEFAULT_SECURITY, get_data
-from realize import settings
+from core.util import append_container, DEFAULT_SECURITY, get_data, check_token
 import os
 from flask.ext.security import login_required, LoginForm, login_user, ConfirmRegisterForm, logout_user
 from flask_security.views import _commit, register_user
@@ -13,8 +12,8 @@ from realize.log import logging
 from flask.ext.restful import Resource, Api, marshal_with, reqparse
 from flask_restful_swagger import swagger
 
-auth_views = Blueprint('auth_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
-api = swagger.docs(Api(auth_views), api_spec_url=settings.API_SPEC_URL)
+auth_views = Blueprint('auth_views', __name__, template_folder=os.path.join(current_app.config['REPO_PATH'], 'templates'))
+api = swagger.docs(Api(auth_views), api_spec_url=current_app.config['API_SPEC_URL'])
 
 _security = LocalProxy(lambda: current_app.extensions['security'])
 
@@ -40,16 +39,6 @@ def authentication_response(form):
             ))
 
     return response, code
-
-def check_token(token):
-    try:
-        data = current_app.extensions['security'].remember_token_serializer.loads(token, max_age=settings.MAX_TOKEN_AGE)
-        user = current_app.extensions['security'].datastore.find_user(id=data[0])
-        if user and md5(user.password) == data[1]:
-            return user
-    except Exception:
-        pass
-    return None
 
 class Login(Resource):
     """
@@ -207,12 +196,14 @@ class AuthenticationCheck(Resource):
         user = check_token(token)
         authenticated = user is not None
         data = dict(authenticated=authenticated)
+        code = 401
         if authenticated:
             data.update(dict(
                 email=user.email,
                 hashkey=user.hashkey,
                 id=user.id,
                 ))
-        return data
+            code = 200
+        return data, code
 
 api.add_resource(AuthenticationCheck, '/api/v1/auth_check')

@@ -1,10 +1,7 @@
 from flask.ext.script import Command, Manager, Option
-from realize import settings
+from flask import current_app
 import os
-from app import app, initialize_app
 from subprocess import Popen
-import os
-from path import path
 
 
 class InvalidPathException(Exception):
@@ -27,4 +24,4 @@ class SyncJS(Command):
         self.run_command("npm install")
         self.run_command("bower install")
         self.run_command("grunt fullBuild")
-        self.run_command("cp -a build/app/* {0}".format(os.path.abspath(os.path.join(settings.REPO_PATH, settings.FRONTEND_PATH))))
+        self.run_command("cp -a build/app/* {0}".format(os.path.abspath(os.path.join(current_app.config['REPO_PATH'], current_app.config['FRONTEND_PATH']))))

@@ -1,8 +1,20 @@
 from __future__ import with_statement
 from alembic import context
+import sqlalchemy
 from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
+import sys
+from path import path
+
+ROOT_PATH = path(__file__).dirname()
+REPO_PATH = ROOT_PATH.dirname()
+
+sys.path.insert(0, REPO_PATH)
+
 from app import db
+from core.database.models import JSONEncodedDict
+
+sqlalchemy.JSONEncodedDict = JSONEncodedDict
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

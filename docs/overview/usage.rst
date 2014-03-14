@@ -19,6 +19,7 @@ Run delayed tasks:
 Sync the frontend files from the angular UI repo:
 
 .. code-block:: shell
+
     python manage.py syncjs -p PATH_TO_REALIZE_ANGULAR_DIR
 
 Create migrations (if you change core/database/models.py):

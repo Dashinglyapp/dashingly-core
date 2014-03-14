@@ -13,3 +13,6 @@ npm -g install grunt-cli karma bower
 pip install -r requirements.txt
 python manage.py syncdb
 
+service realize start
+service celery start
+

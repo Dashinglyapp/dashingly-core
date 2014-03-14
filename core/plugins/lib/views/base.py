@@ -1,5 +1,5 @@
 import pytz
-from realize import settings
+from flask import current_app
 
 class BaseView(object):
     name = None
@@ -77,9 +77,9 @@ class View(BaseView):
         elif self.context.group is not None:
             tz = self.context.group.get_timezone()
         else:
-            tz = settings.DEFAULT_TIMEZONE
+            tz = current_app.config['DEFAULT_TIMEZONE']
 
-        timezone = pytz.timezone(settings.DEFAULT_TIMEZONE)
+        timezone = pytz.timezone(current_app.config['DEFAULT_TIMEZONE'])
         date = date.replace(tzinfo=timezone)
         to_zone = pytz.timezone(tz)
         return date.astimezone(to_zone)

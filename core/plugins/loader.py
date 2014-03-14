@@ -1,11 +1,11 @@
 import importlib
 import os
 import sys
-from core.database.manager import DBManager
+from core.database.manager import DatabaseManager
 from app import db
 from core.plugins.lib.base import BasePlugin
 from core.manager import ExecutionContext
-from core.plugins.views import ViewManager
+from core.views.manager import ViewManager
 
 
 class PluginLoader():
@@ -25,16 +25,16 @@ class PluginLoader():
 
 def load_plugins():
     plugins = {}
-    from realize import settings
+    from flask import current_app
     context = ExecutionContext()
-    manager = DBManager(context, session=db.session)
+    manager = DatabaseManager(context, session=db.session)
     view_manager = ViewManager(context, manager=manager)
-    for plugin in PluginLoader(settings.PLUGIN_PATH):
+    for plugin in PluginLoader(current_app.config['PLUGIN_PATH']):
         # Store plugins in a dictionary for later access.
         plugins[plugin.hashkey] = plugin
         # Register all plugins and create a DB entry as needed.
         manager.register_plugin(plugin)
-        view_manager.set_hashkeys(plugin)
+        view_manager.register_views(plugin)
     db.session.commit()
     return plugins
 
