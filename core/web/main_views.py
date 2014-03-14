@@ -34,7 +34,6 @@ def widget_list():
 
 def send_static_file(*args):
     from app import app
-    print args
     return app.send_static_file(os.path.join(*args))
 
 @main_views.route('/widgets/<path:widget_path>')

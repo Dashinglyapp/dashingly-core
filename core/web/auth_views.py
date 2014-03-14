@@ -202,11 +202,8 @@ class AuthenticationCheck(Resource):
         JSON params - token (string)
         Returns - id, hashkey, email
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument('token', type=str, help='The auth token you want to check.')
-        args = parser.parse_args()
-
-        token = args['token']
+        data = get_data()
+        token = data['token']
         user = check_token(token)
         authenticated = user is not None
         data = dict(authenticated=authenticated)

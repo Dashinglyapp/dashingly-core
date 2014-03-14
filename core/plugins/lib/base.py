@@ -8,6 +8,7 @@ class BasePlugin(object):
     views = []
     permissions = []
     tasks = []
+    commands = []
     settings_form = None
     setup_task = None
     remove_task = None

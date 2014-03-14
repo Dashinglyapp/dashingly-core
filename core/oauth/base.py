@@ -57,8 +57,9 @@ class OauthBase(object):
             callback=url_for(
                 'oauth_views.{0}_authorized'.format(self.handler),
                 _external=True,
-                state=self.generate_oauth_state_token()
-            ))
+            ),
+            state=self.generate_oauth_state_token()
+        )
 
     def authorized(self, resp):
         from core.oauth.oauth_views import Authorizations

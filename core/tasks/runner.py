@@ -6,6 +6,15 @@ from realize.log import logging
 
 log = logging.getLogger(__name__)
 
+class SqlAlchemyTask(celery.Task):
+    """An abstract Celery Task that ensures that the connection the the
+    database is closed on task completion"""
+    abstract = True
+
+    def after_return(self, status, retval, task_id, args, kwargs, einfo):
+        from app import db
+        db.session.remove()
+
 class InvalidZoneException(Exception):
     pass
 
@@ -40,7 +49,7 @@ def get_manager(plugin_hashkey, user_id, group_id):
         raise InvalidZoneException()
     return manager, wrapper
 
-@celery.task()
+@celery.task(base=SqlAlchemyTask)
 def run_delayed_plugin(plugin_hashkey, user_id=None, group_id=None, interval=None):
     manager, wrapper = get_manager(plugin_hashkey, user_id, group_id)
 
@@ -51,7 +60,7 @@ def run_delayed_plugin(plugin_hashkey, user_id=None, group_id=None, interval=Non
         if task.interval == interval and (user_task or group_task):
             manager.run(task)
 
-@celery.task()
+@celery.task(base=SqlAlchemyTask)
 def run_delayed_task(plugin_hashkey, task_proxy, user_id=None, group_id=None):
     manager, wrapper = get_manager(plugin_hashkey, user_id, group_id)
 
@@ -60,10 +69,14 @@ def run_delayed_task(plugin_hashkey, task_proxy, user_id=None, group_id=None):
         if task.task_proxy.name == task_proxy.name:
             manager.run(task)
 
-@celery.task()
+@celery.task(base=SqlAlchemyTask)
 def run_interval_tasks(interval):
-    from core.plugins.loader import plugins
+    # Run delayed tasks for users.
     for user in User.query.all():
         for plugin in user.plugins:
-            # Add back in the .delay here -- removed for debugging.
             run_delayed_plugin.delay(plugin.hashkey, user_id=user.id, interval=interval)
+
+    # Run delayed tasks for groups.
+    for group in Group.query.all():
+        for plugin in group.plugins:
+            run_delayed_plugin.delay(plugin.hashkey, group_id=group.id, interval=interval)

@@ -1,6 +1,7 @@
-This is a minimal and work-in-progress version of [Realize](http://www.realize.pe).  Realize enables you to pull in and analyze data about your life.
+Realize [![Build Status](https://travis-ci.org/realizeapp/realize-core.png?branch=master)](https://travis-ci.org/realizeapp/realize-core)
+---------------------------------------
 
-[![Build Status](https://travis-ci.org/realizeapp/realize-core.png?branch=master)](https://travis-ci.org/realizeapp/realize-core)
+This is a minimal and work-in-progress version of [Realize](http://www.realize.pe).  Realize enables you to pull in and analyze data about your life.
 
 Cross-platform quickstart
 ----------------------------------------

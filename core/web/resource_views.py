@@ -11,6 +11,7 @@ import os
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import reqparse
 from flask_restful_swagger import swagger
+import json
 
 from realize.log import logging
 log = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ class BaseResourceView(Resource):
             hashkey=resource.hashkey,
             name=resource.name,
             type=resource.type,
-            settings=resource.settings
+            settings=json.loads(resource.settings)
         )
 
 class ResourceView(BaseResourceView):
@@ -70,15 +71,15 @@ class ResourceView(BaseResourceView):
                 ])
 
     def post(self, scope, hashkey):
-        parser = reqparse.RequestParser()
-        parser.add_argument('name', type=str, help='The name of the resource.')
-        parser.add_argument('type', type=str, help='The type of the resource.')
-        parser.add_argument('settings', type=dict, help='Settings to store.')
-        args = parser.parse_args()
+        data = get_data()
+        name = data.get('name', None)
+        type = data.get('type', None)
+        settings = data.get('settings', None)
 
-        name = args['name']
-        type = args['type']
-        settings = args['settings']
+        try:
+            settings = json.loads(settings)
+        except Exception:
+            pass
 
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
@@ -101,8 +102,34 @@ class ResourceDetail(BaseResourceView):
         manager.delete_resource(resource_hashkey)
         return {}
 
+
+    @swagger.operation(
+            parameters=[
+                {
+                    "name": "name",
+                    "description": "Name of the resource.",
+                    "required": False,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "type",
+                    "description": "Type of the resource.",
+                    "required": False,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                {
+                    "name": "settings",
+                    "description": "Settings to store.",
+                    "required": False,
+                    "dataType": "string",
+                    "paramType": "string"
+                },
+                ])
+
     def put(self, scope, hashkey, resource_hashkey):
-        settings = get_data()['settings']
+        settings = get_data()
         context, mod = get_context_for_scope(scope, hashkey)
         manager = ResourceManager(context)
         manager.update_resource(resource_hashkey, settings)
