@@ -3,12 +3,12 @@ from alembic.config import Config
 from alembic import command
 from flask.ext.script import Option
 from sqlalchemy.exc import IntegrityError
-from realize import settings
+from flask import current_app
 import os
 from app import db, user_datastore
 from core.database.models import Role, User
 
-alembic_cfg = Config(os.path.join(settings.REPO_PATH, "alembic.ini"))
+alembic_cfg = Config(os.path.join(current_app.config['REPO_PATH'], "alembic.ini"))
 
 class UpgradeDB(Command):
     def run(self):

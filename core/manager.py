@@ -27,9 +27,9 @@ class BaseManager(object):
 
     def get_manager_from_plugin(self, plugin):
         from app import db
-        from core.database.manager import DBManager
+        from core.database.manager import DatabaseManager
         context = ExecutionContext(user=self.user, plugin=plugin, group=self.group)
-        manager = DBManager(context, session=db.session)
+        manager = DatabaseManager(context, session=db.session)
         return manager
 
     def get_manager_from_context(self):

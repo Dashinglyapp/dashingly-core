@@ -5,17 +5,17 @@ from flask.views import MethodView
 from flask_oauthlib.client import OAuth
 import os
 from core.util import append_container, DEFAULT_SECURITY, get_context_for_scope
-from realize import settings
+from flask import current_app
 from core.oauth.base import state_token_required, OauthV1Base, OauthV2Base
 from flask.ext.restful import Resource, Api
 from flask.ext.restful import reqparse
 from flask_restful_swagger import swagger
 
-oauth_views = Blueprint('oauth_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
+oauth_views = Blueprint('oauth_views', __name__, template_folder=os.path.join(current_app.config['REPO_PATH'], 'templates'))
 oauth = OAuth(oauth_views)
-api = swagger.docs(Api(oauth_views), api_spec_url=settings.API_SPEC_URL)
+api = swagger.docs(Api(oauth_views), api_spec_url=current_app.config['API_SPEC_URL'])
 
-oauth_handlers = settings.OAUTH_CONFIG.keys()
+oauth_handlers = current_app.config['OAUTH_CONFIG'].keys()
 
 handlers = {}
 login_urls = {}
@@ -23,10 +23,10 @@ login_urls = {}
 for handler in oauth_handlers:
     mod = __import__("core.oauth.{0}".format(handler))
     secret_key = "{0}_SECRET".format(handler.upper())
-    if not hasattr(settings, secret_key):
+    if secret_key not in current_app.config:
         continue
 
-    handler_settings = dict(settings.OAUTH_CONFIG[handler].items() + getattr(settings, secret_key).items())
+    handler_settings = dict(current_app.config['OAUTH_CONFIG'][handler].items() + current_app.config[secret_key].items())
     handler_obj = oauth.remote_app(
         handler,
         **handler_settings
@@ -45,7 +45,7 @@ for handler in oauth_handlers:
         if auth.handler == handler:
             obj = auth(handler_obj, handler_settings)
 
-            login = DEFAULT_SECURITY(getattr(obj, "login"))
+            login = getattr(obj, "login")
             auth_handler = authorized_handler(state_token_required(getattr(obj, "authorized")))
             token = token_getter(getattr(obj, "token"))
             handlers[handler] = handler_obj

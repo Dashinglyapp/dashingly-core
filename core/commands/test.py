@@ -1,5 +1,4 @@
 from flask.ext.script import Command, Manager, Option
-from realize import settings
 from subprocess import Popen
 
 class Test(Command):

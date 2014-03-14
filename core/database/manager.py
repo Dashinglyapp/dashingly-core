@@ -1,7 +1,7 @@
 from models import Metric, Source, Plugin, PluginData, PluginModel
 from core.plugins.lib.proxies import MetricProxy, SourceProxy, PluginProxy, PluginModelProxy
 from core.util import InvalidObjectException, get_cls
-from core.database.permissions import PermissionsManager
+from core.database.permissions import DatabasePermissionsManager
 from core.manager import BaseManager
 from sqlalchemy.exc import IntegrityError
 from core.plugins.lib.models import DuplicateRecord
@@ -9,18 +9,18 @@ from realize.log import logging
 
 log = logging.getLogger(__name__)
 
-class DBManager(BaseManager):
+class DatabaseManager(BaseManager):
     id_vals = ["id", "hashkey"]
     modify_vals = ["date"]
     get_vals = ["created", "updated"]
     vals = id_vals + modify_vals + get_vals
 
     def __init__(self, context, session=None):
-        super(DBManager, self).__init__(context)
+        super(DatabaseManager, self).__init__(context)
         self.session = session
 
         if self.plugin is not None:
-            self.perm_manager = PermissionsManager(self.context)
+            self.perm_manager = DatabasePermissionsManager(self.context)
 
     def get_or_create(self, obj, query_data=False):
         new_obj = self.get(obj, query_data=query_data)

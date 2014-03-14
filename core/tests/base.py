@@ -1,9 +1,9 @@
 from flask.ext.testing import TestCase
 from mock import patch
-from app import create_test_app, db
+from app import create_app, db, initialize_base_app
 from core.plugins.lib.models import PluginDataModel
 from core.plugins.lib.proxies import SourceProxy, MetricProxy, PluginProxy, PluginModelProxy
-from core.tests.factories import PluginDataFactory, MetricFactory, SourceFactory, PluginModelFactory, PluginFactory, UserFactory
+from core.tests.factories import PluginDataFactory, MetricFactory, SourceFactory, PluginModelFactory, PluginFactory, UserFactory, PluginViewFactory
 from realize.log import logging
 
 log = logging.getLogger(__name__)
@@ -11,7 +11,9 @@ log = logging.getLogger(__name__)
 class RealizeTest(TestCase):
     plugin_classes = []
     def create_app(self):
-        app = create_test_app()
+        app = create_app("realize.test_settings")
+        with app.test_request_context():
+            initialize_base_app(app)
         return app
 
     @property
@@ -46,6 +48,14 @@ class RealizeTest(TestCase):
         })
         return cls_args
 
+    def create_view(self, view_name, plugin):
+        factory = PluginViewFactory
+        inst = factory(
+            name=view_name,
+            plugin=plugin
+        )
+        return inst
+
     def setUp(self):
         db.create_all(app=self.app)
         self.plugin_info = {}
@@ -58,10 +68,17 @@ class RealizeTest(TestCase):
                 k.plugin_proxy = bundle['plugin_proxy']
                 k.plugin_model_proxy = bundle['plugin_model_proxy']
                 models[k.metric_proxy.name] = k
+
+            views = {}
+            for v in p.views:
+                view = self.create_view(v.name, plugin)
+                views[view.name] = view
+
             self.plugin_info[plugin.hashkey] = {
                 'user': user,
                 'plugin': plugin,
-                'models': models
+                'models': models,
+                'views': views
             }
 
         self.patcher = patch.dict('core.plugins.loader.plugins', self.plugins)

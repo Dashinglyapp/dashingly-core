@@ -21,3 +21,9 @@ class PluginModelProxy(object):
 class TaskProxy(object):
     def __init__(self, name):
         self.name = name
+
+class PluginViewProxy(object):
+    def __init__(self, plugin_id=None, name=None, hashkey=None):
+        self.plugin_id = plugin_id
+        self.name = name
+        self.hashkey = hashkey

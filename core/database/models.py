@@ -4,7 +4,10 @@ from realize.log import logging
 from datetime import datetime
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.security import UserMixin, RoleMixin
-from realize import settings
+from flask import current_app
+from json_field import JSONEncodedDict, MutableDict
+
+MutableDict.associate_with(JSONEncodedDict)
 
 log = logging.getLogger(__name__)
 db = SQLAlchemy()
@@ -12,33 +15,50 @@ db = SQLAlchemy()
 STRING_MAX = 255
 
 user_plugins = db.Table('user_plugins', db.Model.metadata,
-                        db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-                        db.Column('plugin_id', db.Integer, db.ForeignKey('plugins.id'))
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('plugin_id', db.Integer, db.ForeignKey('plugins.id'))
 )
 
 user_metrics = db.Table('user_metrics', db.Model.metadata,
-                        db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-                        db.Column('metric_id', db.Integer, db.ForeignKey('metrics.id'))
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('metric_id', db.Integer, db.ForeignKey('metrics.id'))
 )
 
 user_sources = db.Table('user_sources', db.Model.metadata,
-                        db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-                        db.Column('source_id', db.Integer, db.ForeignKey('sources.id'))
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('source_id', db.Integer, db.ForeignKey('sources.id'))
 )
 
 user_groups = db.Table('user_groups', db.Model.metadata,
-                        db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-                        db.Column('group_id', db.Integer, db.ForeignKey('groups.id'))
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
+    db.Column('group_id', db.Integer, db.ForeignKey('groups.id'))
 )
 
 roles_users = db.Table('roles_users', db.Model.metadata,
-                       db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-                       db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
+    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+    db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
+)
 
 group_plugins = db.Table('group_plugins', db.Model.metadata,
-                        db.Column('group_id', db.Integer, db.ForeignKey('groups.id')),
-                        db.Column('plugin_id', db.Integer, db.ForeignKey('plugins.id'))
+    db.Column('group_id', db.Integer, db.ForeignKey('groups.id')),
+    db.Column('plugin_id', db.Integer, db.ForeignKey('plugins.id'))
 )
+
+resource_permissions = db.Table('resource_permissions', db.Model.metadata,
+     db.Column('resourcedata_id', db.Integer, db.ForeignKey('resourcedata.id')),
+     db.Column('permission_id', db.Integer, db.ForeignKey('permissions.id'))
+)
+
+resource_related = db.Table("resource_related", db.Model.metadata,
+    db.Column("parent_id", db.Integer, db.ForeignKey("resourcedata.id")),
+    db.Column("related_id", db.Integer, db.ForeignKey("resourcedata.id"))
+)
+
+resource_views = db.Table("resource_views", db.Model.metadata,
+    db.Column('resourcedata_id', db.Integer, db.ForeignKey('resourcedata.id')),
+    db.Column('pluginview_id', db.Integer, db.ForeignKey('pluginviews.id'))
+)
+
 
 class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
@@ -75,7 +95,7 @@ class User(db.Model, UserMixin):
     def get_timezone(self):
         if self.profile is not None and self.profile.timezone is not None:
             return self.profile.timezone
-        return settings.DEFAULT_TIMEZONE
+        return current_app.config['DEFAULT_TIMEZONE']
 
 class UserProfile(db.Model):
     __tablename__ = 'userprofile'
@@ -86,7 +106,7 @@ class UserProfile(db.Model):
     first_name = db.Column(db.String(STRING_MAX))
     last_name = db.Column(db.String(STRING_MAX))
     timezone = db.Column(db.Text)
-    settings = db.Column(db.Text)
+    settings = db.Column(JSONEncodedDict)
 
     def __repr__(self):
         return "<UserProfile(id='%s', user_id='%s')>" % (self.id, self.user_id)
@@ -99,7 +119,7 @@ class GroupProfile(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
 
     timezone = db.Column(db.Text)
-    settings = db.Column(db.Text)
+    settings = db.Column(JSONEncodedDict)
 
     def __repr__(self):
         return "<GroupProfile(id='%s', user_id='%s')>" % (self.id, self.group_id)
@@ -129,7 +149,7 @@ class Group(db.Model):
     def get_timezone(self):
         if self.profile is not None and self.profile.timezone is not None:
             return self.profile.timezone
-        return settings.DEFAULT_TIMEZONE
+        return current_app.config['DEFAULT_TIMEZONE']
 
 class Authorization(db.Model):
     __table_args__ = (db.UniqueConstraint('user_id', 'name'), )
@@ -239,6 +259,49 @@ class PluginModel(db.Model):
     def __repr__(self):
         return "<PluginModel(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
 
+class PluginView(db.Model):
+    __tablename__ = "pluginviews"
+    __table_args__ = (db.UniqueConstraint('hashkey'), db.UniqueConstraint('name', 'plugin_id'), )
+    hash_vals = ["plugin_id", "name"]
+
+    id = db.Column(db.Integer, primary_key=True)
+    version = db.Column(db.Integer)
+    name = db.Column(db.String(STRING_MAX))
+    hashkey = db.Column(db.String(STRING_MAX))
+    plugin_id = db.Column(db.String(STRING_MAX), db.ForeignKey('plugins.hashkey'))
+
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    plugin = db.relationship("Plugin", backref=db.backref('pluginviews', order_by=id))
+
+    def __repr__(self):
+        return "<PluginView(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
+
+class Permission(db.Model):
+    __tablename__ = "permissions"
+    __table_args__ = (db.UniqueConstraint('hashkey'), )
+
+    hash_vals = ["id"]
+
+    id = db.Column(db.Integer, primary_key=True)
+    version = db.Column(db.Integer)
+    scope = db.Column(db.String(STRING_MAX))
+    public = db.Column(db.Boolean, default=False)
+    hashkey = db.Column(db.String(STRING_MAX))
+
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
+
+    created = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    updated = db.Column(db.DateTime(timezone=True), onupdate=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref('permissions', order_by=id))
+    group = db.relationship("Group", backref=db.backref('permissions', order_by=id))
+
+    def __repr__(self):
+        return "<Permission(id='%s', version='%s', hashkey='%s')>" % (self.id, self.version, self.hashkey)
+
 class ResourceData(db.Model):
     __tablename__ = "resourcedata"
     __table_args__ = (db.UniqueConstraint('hashkey'), )
@@ -249,7 +312,8 @@ class ResourceData(db.Model):
     name = db.Column(db.String(STRING_MAX))
     type = db.Column(db.String(STRING_MAX))
     hashkey = db.Column(db.String(STRING_MAX))
-    settings = db.Column(db.Text)
+    settings = db.Column(JSONEncodedDict)
+    author_email = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
 
@@ -258,6 +322,15 @@ class ResourceData(db.Model):
 
     user = db.relationship("User", backref=db.backref('resourcedata', order_by=id))
     group = db.relationship("Group", backref=db.backref('resourcedata', order_by=id))
+    permissions = db.relationship('Permission', secondary=resource_permissions, backref='resourcedata')
+    related = db.relationship(
+        "ResourceData",
+        secondary=resource_related,
+        primaryjoin=(id == resource_related.c.parent_id),
+        secondaryjoin=(id == resource_related.c.related_id),
+        backref="parents"
+    )
+    views = db.relationship('PluginView', secondary=resource_views, backref='resourcedata')
 
     def __repr__(self):
         return "<ResourceData(name='%s', version='%s', hashkey='%s')>" % (self.name, self.version, self.hashkey)
@@ -276,7 +349,7 @@ class PluginData(db.Model):
     plugin_model_id = db.Column(db.String(STRING_MAX), db.ForeignKey("pluginmodels.hashkey"))
     date = db.Column(db.DateTime(timezone=True))
 
-    data = db.Column(db.Text)
+    data = db.Column(JSONEncodedDict)
 
     user = db.relationship("User", backref=db.backref('plugindata', order_by=id))
     group = db.relationship("Group", backref=db.backref('plugindata', order_by=id))
@@ -323,5 +396,8 @@ event.listen(Group, "before_insert", add_hashkey)
 event.listen(Metric, "before_insert", add_hashkey)
 event.listen(Source, "before_insert", add_hashkey)
 event.listen(ResourceData, "before_insert", add_hashkey)
+event.listen(PluginView, "before_insert", add_hashkey)
+
+# Register profile adding events.
 event.listen(User, "before_insert", add_user_profile)
 event.listen(Group, "before_insert", add_group_profile)

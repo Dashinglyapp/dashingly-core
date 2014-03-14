@@ -4,7 +4,7 @@ from factory.alchemy import SQLAlchemyModelFactory
 from core.tests.base import db
 import factory
 from datetime import datetime
-from core.database.models import User, Plugin, Metric, Source, PluginData, PluginModel,  UserItem
+from core.database.models import User, Plugin, Metric, Source, PluginData, PluginModel,  UserItem, PluginView
 from realize.log import logging
 
 log = logging.getLogger(__name__)
@@ -90,6 +90,9 @@ class SourceFactory(UserItemFactory):
 
 class PluginModelFactory(UserItemFactory):
     FACTORY_FOR = PluginModel
+
+class PluginViewFactory(UserItemFactory):
+    FACTORY_FOR = PluginView
 
 class PluginDataFactory(BaseFactory):
     FACTORY_FOR = PluginData
