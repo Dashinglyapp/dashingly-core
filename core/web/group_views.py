@@ -1,4 +1,4 @@
-from flask import jsonify, request, Blueprint
+from flask import jsonify, request, Blueprint, current_app
 from flask.views import MethodView
 from core.database.models import Group
 from core.groups.permissions import GroupPermissions
@@ -6,7 +6,6 @@ from core.manager import ExecutionContext
 from core.util import DEFAULT_SECURITY, append_container, get_data
 from flask.ext.login import current_user
 from flask.ext.security import login_required
-from realize import settings
 import os
 from realize.log import logging
 import json
@@ -15,8 +14,8 @@ from flask.ext.restful import reqparse
 from flask_restful_swagger import swagger
 
 log = logging.getLogger(__name__)
-group_views = Blueprint('group_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
-api = swagger.docs(Api(group_views), api_spec_url=settings.API_SPEC_URL)
+group_views = Blueprint('group_views', __name__, template_folder=os.path.join(current_app.config['REPO_PATH'], 'templates'))
+api = swagger.docs(Api(group_views), api_spec_url=current_app.config['API_SPEC_URL'])
 
 class InvalidActionException(Exception):
     pass

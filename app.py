@@ -34,19 +34,20 @@ def make_json_error(ex):
     return response
 
 def register_blueprints(app):
-    from core.web.main_views import main_views
-    from core.web.plugin_views import plugin_views
-    from core.oauth.oauth_views import oauth_views
-    from core.web.resource_views import resource_views
-    from core.web.user_views import user_views
-    from core.web.group_views import group_views
-    from core.tasks.task_views import task_views
-    from core.web.auth_views import auth_views
+    with app.test_request_context():
+        from core.web.main_views import main_views
+        from core.web.plugin_views import plugin_views
+        from core.oauth.oauth_views import oauth_views
+        from core.web.resource_views import resource_views
+        from core.web.user_views import user_views
+        from core.web.group_views import group_views
+        from core.tasks.task_views import task_views
+        from core.web.auth_views import auth_views
 
-    blueprints = [main_views, plugin_views, oauth_views, resource_views, user_views, group_views, task_views, auth_views]
-    for bp in blueprints:
-        app.register_blueprint(bp)
-        bp.config = app.config
+        blueprints = [main_views, plugin_views, oauth_views, resource_views, user_views, group_views, task_views, auth_views]
+        for bp in blueprints:
+            app.register_blueprint(bp)
+            bp.config = app.config
 
 def register_extensions(app):
     oauth.init_app(app)
@@ -54,8 +55,10 @@ def register_extensions(app):
     security = Security(app, user_datastore)
 
 def initialize_admin(app):
-    from core.web.admin import UserView, PluginView, IndexView, UserProfileView, GroupView, PluginDataView
+    from core.web.admin import UserView, PluginView, IndexView, UserProfileView, GroupView, PluginDataView, Login, Logout
     admin.init_app(app)
+    admin.add_view(Login())
+    admin.add_view(Logout())
     admin.add_view(UserView(db.session))
     admin.add_view(PluginView(db.session))
     admin.add_view(UserProfileView(db.session))
@@ -63,10 +66,9 @@ def initialize_admin(app):
     admin.add_view(PluginDataView(db.session))
     admin.index_view = IndexView()
 
-def create_app():
+def create_app(settings_name="realize.settings"):
     app = Flask(__name__, template_folder='templates')
-    app.config.from_object('realize.settings')
-
+    app.config.from_object(settings_name)
     db.app = app
     db.init_app(app)
 
@@ -75,24 +77,15 @@ def create_app():
 
     return app
 
-def create_test_app():
-    app = create_app()
-    app.config.from_object('realize.test_settings')
-
-    db.app = app
-    db.init_app(app)
-    register_blueprints(app)
-    register_extensions(app)
-    db.create_all(app=app)
-
-    return app
-
-def initialize_app(app):
+def initialize_base_app(app):
     register_blueprints(app)
     register_extensions(app)
     api.init_app(app)
-    initialize_admin(app)
     app.extensions['security'].login_manager.token_loader(token_loader)
+
+def initialize_app(app):
+    initialize_base_app(app)
+    initialize_admin(app)
 
 def token_loader(token, max_age=settings.MAX_TOKEN_AGE):
     """
@@ -113,10 +106,10 @@ app = create_app()
 api = restful.Api()
 oauth = OAuth()
 babel = Babel()
-admin = Admin(name=settings.ADMIN_NAME)
+admin = Admin(name=app.config['ADMIN_NAME'])
 celery = make_celery(app)
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
 if __name__ == '__main__':
     initialize_app(app)
-    app.run(debug=settings.DEBUG, host="127.0.0.1")
+    app.run(debug=app.config['DEBUG'], host="127.0.0.1")

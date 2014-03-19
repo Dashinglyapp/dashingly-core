@@ -1,8 +1,9 @@
 from flask.ext.login import current_user
 from flask.ext.security import auth_required
-from flask import url_for, request
+from flask import url_for, request, current_app
+from flask.ext.security.utils import md5
 from sqlalchemy.exc import IntegrityError
-from core.database.models import Group
+from core.database.models import Group, User
 from core.manager import ExecutionContext
 
 def api_url_for(namespace, cls, **values):
@@ -56,6 +57,9 @@ def append_container(data, name=None, tags=None, code=200, data_key='modules'):
 def lookup_group(hashkey):
     return Group.query.filter(Group.hashkey == hashkey).first()
 
+def lookup_user(hashkey):
+    return User.query.filter_by(hashkey=hashkey).first()
+
 def check_ownership(group):
     return current_user == group.owner
 
@@ -69,10 +73,10 @@ def lookup_and_check(hashkey):
 def get_context_for_scope(scope, hashkey):
     context = ExecutionContext()
     if scope == "user":
-        mod = current_user
+        mod = lookup_user(hashkey)
         context.user = mod
     elif scope == "group":
-        mod = lookup_and_check(hashkey)
+        mod = lookup_group(hashkey)
         context.group = mod
     else:
         raise InvalidScopeException()
@@ -80,3 +84,13 @@ def get_context_for_scope(scope, hashkey):
 
 def get_data():
     return request.get_json(force=True, silent=True)
+
+def check_token(token):
+    try:
+        data = current_app.extensions['security'].remember_token_serializer.loads(token, max_age=current_app.config['MAX_TOKEN_AGE'])
+        user = current_app.extensions['security'].datastore.find_user(id=data[0])
+        if user and md5(user.password) == data[1]:
+            return user
+    except Exception:
+        pass
+    return None

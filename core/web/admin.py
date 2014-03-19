@@ -2,6 +2,8 @@ from flask.ext.login import current_user
 from flask.ext.admin import Admin, BaseView, expose
 from flask.ext.admin.contrib.sqla import ModelView
 from flask.ext.security.utils import encrypt_password
+from flask import url_for
+from werkzeug.utils import redirect
 from wtforms import PasswordField
 from core.database.models import User, Plugin, UserProfile, Group, PluginData
 
@@ -10,10 +12,20 @@ class AuthMixin(object):
         # Change this to do an admin check.
         return current_user.has_role('admin')
 
+class Login(BaseView):
+    @expose('/')
+    def login(self):
+        return redirect(url_for('security.login'))
+
+class Logout(BaseView):
+    @expose('/')
+    def logout(self):
+        return redirect(url_for('security.logout'))
+
 class IndexView(AuthMixin, BaseView):
     @expose('/')
     def index(self):
-        return self.render('admin/index.html')
+        return self.redirect('admin/index.html')
 
 class UserView(AuthMixin, ModelView):
     can_create = True

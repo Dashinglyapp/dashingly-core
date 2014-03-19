@@ -1,5 +1,5 @@
 from flask.ext.script import Command, Manager, Option
-from realize import settings
+from flask import current_app
 import os
 from app import app, initialize_app
 
@@ -14,4 +14,4 @@ class RunServer(Command):
         if port is None:
             port = 5000
         port = int(port)
-        app.run(debug=settings.DEBUG, host=host, port=port)
+        app.run(debug=current_app.config['DEBUG'], host=host, port=port)

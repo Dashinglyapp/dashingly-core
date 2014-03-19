@@ -1,4 +1,5 @@
 from app import celery
+from flask import current_app
 from core.database.models import User, Plugin, Group
 from core.manager import ExecutionContext
 from core.tasks.manager import TaskManager

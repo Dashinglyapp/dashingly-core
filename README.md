@@ -10,24 +10,31 @@ The easiest way to get started is with a Vagrant virtual machine:
 
 First, [install VirtualBox](https://www.virtualbox.org/wiki/Downloads).
 
-Next, [install Vagrant](http://www.vagrantup.com/downloads)
+Next, [install Vagrant](http://www.vagrantup.com/downloads).
 
 Then type:
 ```sh
+git clone https://github.com/realizeapp/realize-core.git
+cd realize-core
 vagrant up
 ```
 
 This should take 15-20 minutes to download and install dependencies on newer machines.
 
-Then type:
+Once everything finishes, visiting `127.0.0.1:5000` in your browser will show a simple index page.  Please see the [documentation](http://realize-core.readthedocs.org/) for more information.
+
+Full UI
+---------------------------------------------
+
+The full UI is in the `realize-ui-angular` repo.  In order to get it:
 
 ```sh
-vagrant ssh
-cd /vagrant
-python manage.py runserver -hn 0.0.0.0
+git clone https://github.com/realizeapp/realize-ui-angular.git
+cd realize-core
+python manage.py syncjs -p PATH_TO_REALIZE_ANGULAR_DIR
 ```
 
-Visiting `127.0.0.1:5000` in your browser will now show a simple index page.  Please see the [documentation](http://realize-core.readthedocs.org/) for more information, including setting up the full UI.
+Visiting `127.0.0.1:5000` will now show you the realize UI instead of the index page.
 
 Browsable API
 ---------------------------------------------

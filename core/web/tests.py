@@ -1,6 +1,5 @@
 from core.tests.base import RealizeTest
 from core.tests.factories import UserFactory, PluginFactory
-from core.database.models import User
 from flask import url_for
 import json
 
@@ -34,7 +33,7 @@ class WebTest(RealizeTest):
         return self.send_data("put", url_name, data, headers, **kwargs)
 
     def patch_data(self, url_name, data, headers=None, **kwargs):
-        return self.send_data("post", url_name, data, headers, **kwargs)
+        return self.send_data("patch", url_name, data, headers, **kwargs)
 
     def get_data(self, url_name, **kwargs):
         url = url_for(url_name, **kwargs)
@@ -94,7 +93,7 @@ class UserTest(WebTest):
         settings = {'test': 'test'}
         timezone = "America/New_York"
 
-        _, status = self.put_data(url_name, {'settings': json.dumps(settings), 'timezone': timezone}, hashkey=user_data['hashkey'])
+        _, status = self.put_data(url_name, {'settings': settings, 'timezone': timezone}, hashkey=user_data['hashkey'])
         self.assertEqual(status, 200)
 
         profile, status = self.get_data(url_name, hashkey=user_data['hashkey'])
@@ -164,10 +163,31 @@ class GroupTest(WebTest):
         self.assertEqual(len(data), len(plugin_cls.views))
 
 class ResourceTest(WebTest):
+
     def create_resource(self, user_data):
         url_name = "resource_views.resourceview"
         post_data = {'name': 'test', 'type': 'test', 'settings': {'test': 'test'}}
         self.post_data(url_name, data=post_data, scope="user", hashkey=user_data['hashkey'])
+
+    def create_tree_resource(self, user_data):
+        url_name = "resource_views.treeresourceview"
+        post_data = {
+            'name': 'test',
+            'type': 'test1',
+            'settings': {'test': 'test'},
+            'permissions': [{'scope': 'user', 'public': False, 'hashkey': user_data['hashkey']}],
+            'views': [],
+            'related': [
+                {
+                    'name': 'test12',
+                    'type': 'test1',
+                    'settings': {'test8': 'test'},
+                    'permissions': [{'scope': 'user', 'public': False, 'hashkey': user_data['hashkey']}],
+                    'views': [],
+                }
+            ]
+        }
+        return self.post_data(url_name, data=post_data, scope="user", hashkey=user_data['hashkey'])
 
     def test_resources(self):
         url_name = "resource_views.resourceview"
@@ -188,10 +208,27 @@ class ResourceTest(WebTest):
         self.assertEqual(data['name'], 'test')
 
         put_data = {'settings': {'blah': 'blah'}}
-        self.put_data(url_name, data=put_data, scope="user", hashkey=user_data['hashkey'], resource_hashkey=res_data[0]['hashkey'])
+        self.patch_data(url_name, data=put_data, scope="user", hashkey=user_data['hashkey'], resource_hashkey=res_data[0]['hashkey'])
 
         data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'], resource_hashkey=res_data[0]['hashkey'])
         self.assertTrue('blah' in data['settings'])
+
+    def test_resources_tree(self):
+        user_data = self.create_and_login_user()
+        data, status = self.create_tree_resource(user_data)
+        self.assertEqual(len(data['related']), 1)
+
+        url_name = "resource_views.treeresourcedetail"
+        get_data, status = self.get_data(url_name, scope="user", hashkey=user_data['hashkey'], resource_hashkey=data['hashkey'])
+        self.assertEqual(get_data, data)
+
+        self.assertEqual(get_data['owner_hashkey'], user_data['hashkey'])
+        self.assertEqual(get_data['owner_scope'], "user")
+
+        patch_url_name = "resource_views.resourcedetail"
+        patch_send_data = {'permissions': [{'scope': 'user', 'public': True, 'hashkey': user_data['hashkey']}]}
+        patch_data, status = self.patch_data(patch_url_name, data=patch_send_data, scope="user", hashkey=user_data['hashkey'], resource_hashkey=data['hashkey'])
+        self.assertEqual(patch_data['permissions'][0]['public'], patch_send_data['permissions'][0]['public'])
 
 class PluginTest(WebTest):
 

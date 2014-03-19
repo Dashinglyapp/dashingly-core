@@ -7,10 +7,13 @@ from werkzeug.utils import redirect
 from flask.ext.login import current_user
 from core.database.models import User
 from core.util import api_url_for
-from realize import settings
+from flask import current_app
+
+class NotAuthenticatedException(Exception):
+    pass
 
 def get_serializer():
-    return URLSafeTimedSerializer(settings.SECRET_KEY)
+    return URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
 
 def state_token_required(fn):
     @wraps(fn)
@@ -23,6 +26,8 @@ def state_token_required(fn):
 def _check_state_token():
     serializer = get_serializer()
     state = request.args.get('state', None)
+    if state is None:
+        state = request.cookies.get('oauth_state', None)
     id = serializer.loads(state)[0]
     user = User.query.filter(User.id == int(id)).first()
 
@@ -53,13 +58,24 @@ class OauthBase(object):
         return serializer.dumps([current_user.id, current_user.email])
 
     def login(self):
-        return self.handler_obj.authorize(
+        from app import token_loader
+        token = request.args.get('token', None)
+        user = token_loader(token)
+
+        if user is None or token is None:
+            raise NotAuthenticatedException()
+
+        state = self.generate_oauth_state_token()
+        response = self.handler_obj.authorize(
             callback=url_for(
                 'oauth_views.{0}_authorized'.format(self.handler),
                 _external=True,
             ),
-            state=self.generate_oauth_state_token()
+            state=state
         )
+
+        response.set_cookie('oauth_state', state, max_age=current_app.config['OAUTH_MAX_TOKEN_AGE'])
+        return response
 
     def authorized(self, resp):
         from core.oauth.oauth_views import Authorizations
@@ -77,7 +93,7 @@ class OauthBase(object):
             oauth_token_secret=resp.get(self.oauth_token_secret_name, None),
             version=self.version,
         )
-        return redirect(api_url_for("oauth_views", Authorizations, scope="user", hashkey=current_user.hashkey))
+        return redirect(url_for("main_views.index"))
 
     def get_or_create(self, name, **kwargs):
         from core.database.models import Authorization

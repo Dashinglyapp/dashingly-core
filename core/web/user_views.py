@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask.ext.security import login_required
 from flask.ext.login import current_user
 from flask_wtf import Form
@@ -7,7 +7,6 @@ from wtforms import TextField
 from wtforms_json import MultiDict
 from core.plugins.lib.views.forms import JSONMixin
 from core.util import DEFAULT_SECURITY, append_container, get_data
-from realize import settings
 import os
 from realize.log import logging
 import json
@@ -17,8 +16,8 @@ from flask_restful_swagger import swagger
 
 log = logging.getLogger(__name__)
 
-user_views = Blueprint('user_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
-api = swagger.docs(Api(user_views), api_spec_url=settings.API_SPEC_URL)
+user_views = Blueprint('user_views', __name__, template_folder=os.path.join(current_app.config['REPO_PATH'], 'templates'))
+api = swagger.docs(Api(user_views), api_spec_url=current_app.config['API_SPEC_URL'])
 
 class UserProfile(Resource):
     decorators = [DEFAULT_SECURITY]
@@ -34,12 +33,6 @@ class UserProfile(Resource):
             'hashkey': current_user.hashkey,
             'email': current_user.email,
         }
-        try:
-            data['settings'] = json.loads(data['settings'])
-        except ValueError:
-            data['settings'] = {}
-        except TypeError:
-            data['settings'] = {}
         return model, data
 
     def get(self, hashkey):
@@ -91,14 +84,11 @@ class UserProfile(Resource):
                     except Exception:
                         pass
 
-                    try:
-                        settings = json.loads(model.settings)
-                    except Exception:
-                        settings = {}
+                    settings = model.settings
 
                     for k in val:
                         settings[k] = val[k]
-                    val = json.dumps(settings)
+                    val = settings
                 setattr(model, attr, val)
         db.session.commit()
         return {}, 200

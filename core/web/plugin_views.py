@@ -7,10 +7,9 @@ from wtforms_json import MultiDict
 from core.database.models import Group
 from core.manager import ExecutionContext
 from core.oauth.manager import AuthorizationManager
-from core.plugins.views import ViewManager
+from core.views.manager import ViewManager
 from core.util import DEFAULT_SECURITY, append_container, get_context_for_scope, InvalidScopeException, api_url_for, get_data
 from core.web.group_views import InvalidActionException
-from realize import settings
 import os
 from core.plugins.manager import PluginManager, PluginActionRunner
 from core.plugins.lib.proxies import PluginProxy
@@ -21,8 +20,8 @@ from realize.log import logging
 
 log = logging.getLogger(__name__)
 
-plugin_views = Blueprint('plugin_views', __name__, template_folder=os.path.join(settings.REPO_PATH, 'templates'))
-api = swagger.docs(Api(plugin_views), api_spec_url=settings.API_SPEC_URL)
+plugin_views = Blueprint('plugin_views', __name__, template_folder=os.path.join(current_app.config['REPO_PATH'], 'templates'))
+api = swagger.docs(Api(plugin_views), api_spec_url=current_app.config['API_SPEC_URL'])
 
 class BasePluginView(Resource):
     method_decorators = [DEFAULT_SECURITY]
@@ -183,31 +182,55 @@ api.add_resource(PluginViewsList, '/api/v1/<string:scope>/<string:hashkey>/plugi
 
 class PluginViewsDetail(BasePluginView):
 
-    def get_manager(self, scope, hashkey, plugin_hashkey):
+    def get_key(self, data):
+        resource_hashkey = data.pop('resource_hashkey', None)
+        return data, resource_hashkey
+
+    def find_get_data(self):
+        data = request.args.copy()
+        return self.get_key(data)
+
+    def find_post_data(self):
+        data = get_data()
+        return self.get_key(data)
+
+    def get_plugin(self, view_hashkey):
+        from app import db
+        from core.database.models import PluginView
+        view = db.session.query(PluginView).filter_by(hashkey=view_hashkey).first()
+        return view.plugin
+
+    def get_manager(self, scope, hashkey, view_hashkey):
+        plugin = self.get_plugin(view_hashkey)
         context, mod = get_context_for_scope(scope, hashkey)
-        context.plugin = PluginProxy(hashkey=plugin_hashkey, name="")
+        context.plugin = PluginProxy(hashkey=plugin.hashkey, name="")
         manager = PluginManager(context)
         return manager
 
-    def get(self, scope, hashkey, plugin_hashkey, view_hashkey):
-        manager = self.get_manager(scope, hashkey, plugin_hashkey)
-        val = manager.call_route_handler(view_hashkey, "get", request.args)
+    def get(self, scope, hashkey, view_hashkey):
+        data, resource_key = self.find_get_data()
+        manager = self.get_manager(scope, hashkey, view_hashkey)
+        val = manager.call_route_handler(view_hashkey, "get", data, resource_key)
         return val
 
-    def post(self, scope, hashkey, plugin_hashkey, view_hashkey):
-        manager = self.get_manager(scope, hashkey, plugin_hashkey)
-        return manager.call_route_handler(view_hashkey, "post", get_data())
+    def post(self, scope, hashkey, view_hashkey):
+        data, resource_key = self.find_post_data()
+        manager = self.get_manager(scope, hashkey, view_hashkey)
+        return manager.call_route_handler(view_hashkey, "post", data, resource_key)
 
-    def put(self, scope, hashkey, plugin_hashkey, view_hashkey):
-        manager = self.get_manager(scope, hashkey, plugin_hashkey)
-        return manager.call_route_handler(view_hashkey, "put", get_data())
+    def put(self, scope, hashkey, view_hashkey):
+        data, resource_key = self.find_post_data()
+        manager = self.get_manager(scope, hashkey, view_hashkey)
+        return manager.call_route_handler(view_hashkey, "put", data, resource_key)
 
-    def patch(self, scope, hashkey, plugin_hashkey, view_hashkey):
-        manager = self.get_manager(scope, hashkey, plugin_hashkey)
-        return manager.call_route_handler(view_hashkey, "patch", get_data())
+    def patch(self, scope, hashkey, view_hashkey):
+        data, resource_key = self.find_post_data()
+        manager = self.get_manager(scope, hashkey, view_hashkey)
+        return manager.call_route_handler(view_hashkey, "patch", data, resource_key)
 
-    def delete(self, scope, hashkey, plugin_hashkey, view_hashkey):
-        manager = self.get_manager(scope, hashkey, plugin_hashkey)
-        return manager.call_route_handler(view_hashkey, "delete", request.args)
+    def delete(self, scope, hashkey, view_hashkey):
+        data, resource_key = self.find_get_data()
+        manager = self.get_manager(scope, hashkey, view_hashkey)
+        return manager.call_route_handler(view_hashkey, "delete", data, resource_key)
 
-api.add_resource(PluginViewsDetail, '/api/v1/<string:scope>/<string:hashkey>/plugins/<string:plugin_hashkey>/views/<string:view_hashkey>')
+api.add_resource(PluginViewsDetail, '/api/v1/<string:scope>/<string:hashkey>/views/<string:view_hashkey>')

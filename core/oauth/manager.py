@@ -1,7 +1,7 @@
 from core.manager import BaseManager
 from core.plugins.lib.permissions import AuthorizationPermission
 from requests_oauthlib import OAuth2Session, OAuth1Session
-from realize import settings
+from flask import current_app
 
 class AuthorizationDoesNotExist(Exception):
     pass
@@ -34,7 +34,7 @@ class AuthorizationManager(BaseManager):
                     return None
                 else:
                     authorization = authorization[-1]
-                client_data = getattr(settings, "{0}_SECRET".format(name.upper()))
+                client_data = current_app.config.get("{0}_SECRET".format(name.upper()))
                 if authorization.version == 1:
                     session = OAuth1Session(
                         client_data['consumer_key'],
