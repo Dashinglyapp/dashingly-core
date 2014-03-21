@@ -14,7 +14,7 @@ class MoodForm(FormView):
     metric_proxy = MetricProxy(name="mood")
     source_proxy = SourceProxy(name="self")
 
-    data = IntegerField('Mood', [required()], description="Number on a 1-10 scale.")
+    score = IntegerField('Mood', [required()], description="Number on a 1-10 scale.")
 
 class SurveyForm(FormView):
     name = "survey"
@@ -36,7 +36,7 @@ class DailyMoodChart(ModelChartView):
     name = 'daily_mood'
     description = 'Your mood every day.'
     model = MoodModel
-    y_data_field = 'data'
+    y_data_field = 'score'
     x_data_field = 'date'
     y_label = 'Mood'
     x_label = 'Date'

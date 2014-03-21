@@ -12,3 +12,4 @@ python-dev
 libssl-dev
 libmysqlclient-dev
 npm
+libffi-dev

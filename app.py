@@ -12,6 +12,9 @@ from werkzeug.exceptions import HTTPException
 from flask.ext import restful
 from flask.ext.admin import Admin
 from flask.ext.admin.contrib.sqla import ModelView
+import sys
+
+sys.path.insert(0, settings.REPO_PATH)
 
 def make_celery(app):
     celery = Celery(app.import_name, broker=app.config['BROKER_URL'])
