@@ -34,7 +34,8 @@ class AuthorizationManager(BaseManager):
                     return None
                 else:
                     authorization = authorization[-1]
-                client_data = current_app.config.get("{0}_SECRET".format(name.upper()))
+                oauth_secrets = current_app.config.get("OAUTH_SECRETS", {})
+                client_data = oauth_secrets.get(name)
                 if authorization.version == 1:
                     session = OAuth1Session(
                         client_data['consumer_key'],

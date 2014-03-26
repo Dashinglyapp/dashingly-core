@@ -1,10 +1,11 @@
 from flask.ext.script import Manager
-from core.commands.manager import CommandManager
-from app import app, initialize_app
+from core.commands.manager import CustomCommandManager
+from app import initialize_app, app
 from core.manager import ExecutionContext
 
 initialize_app(app)
-manager = Manager(app)
+manager = CustomCommandManager(app)
+manager.add_option('-s', '--settings', dest='settings', required=False)
 
 def add_commands(manager):
     from core.commands.database import UpgradeDB, MakeAdmin
@@ -16,12 +17,6 @@ def add_commands(manager):
     manager.add_command('syncjs', SyncJS)
     manager.add_command('test', Test)
     manager.add_command('makeadmin', MakeAdmin)
-
-    context = ExecutionContext()
-    command_manager = CommandManager(context)
-    plugin_command_manager = command_manager.get_plugin_command_manager()
-
-    manager.add_command('plugins', plugin_command_manager)
 
 if __name__ == "__main__":
     with app.test_request_context():

@@ -63,7 +63,9 @@ class ResourceManager(BaseManager):
         db.session.add(model)
         if views is not None:
             for v in views:
-                model.views.append(self.get_view(v))
+                view = self.get_view(v)
+                if view is not None:
+                    model.views.append(view)
         if permissions is not None:
             for p in permissions:
                 model.permissions.append(self.create_permission(p['scope'], p['public'], p['hashkey']))

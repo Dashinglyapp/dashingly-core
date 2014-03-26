@@ -21,7 +21,13 @@ class SyncJS(Command):
             raise InvalidPathException
         path = os.path.expanduser(path)
         self.cwd = os.path.abspath(path)
+        for the_file in os.listdir(current_app.config['FRONTEND_PATH']):
+            file_path = os.path.join(current_app.config['FRONTEND_PATH'], the_file)
+            try:
+                if os.path.isfile(file_path) and the_file != ".vc":
+                    os.unlink(file_path)
+            except Exception, e:
+                print e
         self.run_command("npm install")
-        self.run_command("bower install")
-        self.run_command("grunt fullBuild")
+        self.run_command("grunt build")
         self.run_command("cp -a build/app/* {0}".format(os.path.abspath(os.path.join(current_app.config['REPO_PATH'], current_app.config['FRONTEND_PATH']))))
