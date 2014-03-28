@@ -21,6 +21,8 @@ class SyncJS(Command):
             raise InvalidPathException
         path = os.path.expanduser(path)
         self.cwd = os.path.abspath(path)
+
+        frontend_path = os.path.abspath(os.path.join(current_app.config['REPO_PATH'], current_app.config['FRONTEND_PATH']))
         for the_file in os.listdir(current_app.config['FRONTEND_PATH']):
             file_path = os.path.join(current_app.config['FRONTEND_PATH'], the_file)
             try:
@@ -29,5 +31,6 @@ class SyncJS(Command):
             except Exception, e:
                 print e
         self.run_command("npm install")
-        self.run_command("grunt build")
-        self.run_command("cp -a build/app/* {0}".format(os.path.abspath(os.path.join(current_app.config['REPO_PATH'], current_app.config['FRONTEND_PATH']))))
+        self.run_command("grunt setup")
+        self.run_command("rm -rf {0}/*".format(frontend_path))
+        self.run_command("cp -a dist/* {0}".format(os.path.abspath(frontend_path)))

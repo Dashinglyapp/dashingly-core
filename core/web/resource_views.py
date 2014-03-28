@@ -64,7 +64,8 @@ class BaseResourceView(Resource):
             owner_hashkey=owner_key,
             views=[v.hashkey for v in resource.views],
             permissions=permissions,
-            current_view=resource.current_view
+            current_view=resource.current_view,
+            parents=[r.hashkey for r in resource.parents],
         )
         if find_related:
             related = []
