@@ -13,7 +13,7 @@ from flask.ext import restful
 from flask.ext.admin import Admin
 from flask.ext.admin.contrib.sqla import ModelView
 import sys
-
+import os
 sys.path.insert(0, settings.REPO_PATH)
 
 def make_celery(app):
@@ -69,9 +69,9 @@ def initialize_admin(app):
     admin.add_view(PluginDataView(db.session))
     admin.index_view = IndexView()
 
-def create_app(settings_name="realize.settings"):
+def create_app(settings="realize.settings"):
     app = Flask(__name__, template_folder='templates')
-    app.config.from_object(settings_name)
+    app.config.from_object(settings)
     db.app = app
     db.init_app(app)
 
@@ -90,6 +90,11 @@ def initialize_app(app):
     initialize_base_app(app)
     initialize_admin(app)
 
+def create_and_initialize(settings="realize.settings"):
+    app = create_app(settings)
+    initialize_app(app)
+    return app
+
 def token_loader(token, max_age=settings.MAX_TOKEN_AGE):
     """
     Used to patch flask-security to expire tokens after a time limit.
@@ -104,8 +109,8 @@ def token_loader(token, max_age=settings.MAX_TOKEN_AGE):
         pass
     return AnonymousUser()
 
-
-app = create_app()
+settings_module = os.environ.get('FLASK_SETTINGS_MODULE', 'realize.settings')
+app = create_app(settings_module)
 api = restful.Api()
 oauth = OAuth()
 babel = Babel()

@@ -63,7 +63,8 @@ class BaseResourceView(Resource):
             owner_scope=res_scope,
             owner_hashkey=owner_key,
             views=[v.hashkey for v in resource.views],
-            permissions=permissions
+            permissions=permissions,
+            current_view=resource.current_view
         )
         if find_related:
             related = []

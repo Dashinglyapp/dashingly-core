@@ -314,6 +314,7 @@ class ResourceData(db.Model):
     hashkey = db.Column(db.String(STRING_MAX))
     settings = db.Column(JSONEncodedDict)
     author_email = db.Column(db.Text)
+    current_view = db.Column(db.String(STRING_MAX))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
 

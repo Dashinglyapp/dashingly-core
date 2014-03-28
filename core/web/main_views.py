@@ -42,3 +42,19 @@ def widgets(widget_path):
 @main_views.route('/assets/<path:asset_path>')
 def assets(asset_path):
     return send_static_file("frontend", "assets", asset_path)
+
+@main_views.route('/thirdparty/<path:thirdparty_path>')
+def thirdparty(thirdparty_path):
+    return send_static_file("frontend", "thirdparty", thirdparty_path)
+
+@main_views.route('/lib/<path:lib_path>')
+def lib(lib_path):
+    return send_static_file("frontend", "lib", lib_path)
+
+@main_views.route('/partials/<path:partial_path>')
+def partials(partial_path):
+    return send_static_file("frontend", "partials", partial_path)
+
+@main_views.route('/<string:filename>.js')
+def get_file(filename):
+    return send_static_file("frontend", "{0}.js".format(filename))

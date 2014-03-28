@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
 import sys
 from path import path
+from flask import current_app
 
 ROOT_PATH = path(__file__).dirname()
 REPO_PATH = ROOT_PATH.dirname()
@@ -47,7 +48,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = current_app.config['DB_URL']
     context.configure(url=url)
 
     with context.begin_transaction():
@@ -60,8 +61,11 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
+
+    conf = config.get_section(config.config_ini_section)
+    conf['sqlalchemy.url'] = current_app.config['DB_URL']
     engine = engine_from_config(
-                config.get_section(config.config_ini_section),
+                conf,
                 prefix='sqlalchemy.',
                 poolclass=pool.NullPool)
 

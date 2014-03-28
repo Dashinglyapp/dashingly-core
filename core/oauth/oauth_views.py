@@ -16,17 +16,17 @@ oauth = OAuth(oauth_views)
 api = swagger.docs(Api(oauth_views), api_spec_url=current_app.config['API_SPEC_URL'])
 
 oauth_handlers = current_app.config['OAUTH_CONFIG'].keys()
+oauth_secrets = current_app.config.get("OAUTH_SECRETS", {})
 
 handlers = {}
 login_urls = {}
 
 for handler in oauth_handlers:
     mod = __import__("core.oauth.{0}".format(handler))
-    secret_key = "{0}_SECRET".format(handler.upper())
-    if secret_key not in current_app.config:
+    if handler not in oauth_secrets:
         continue
 
-    handler_settings = dict(current_app.config['OAUTH_CONFIG'][handler].items() + current_app.config[secret_key].items())
+    handler_settings = dict(current_app.config['OAUTH_CONFIG'][handler].items() + oauth_secrets[handler].items())
     handler_obj = oauth.remote_app(
         handler,
         **handler_settings

@@ -13,3 +13,6 @@ libssl-dev
 libmysqlclient-dev
 npm
 libffi-dev
+postgresql
+postgresql-contrib
+libpq-dev
