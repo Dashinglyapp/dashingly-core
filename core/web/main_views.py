@@ -9,7 +9,7 @@ main_views = Blueprint('main_views', __name__, template_folder=os.path.join(curr
 
 @main_views.route('/')
 def index():
-    angular_index = os.path.join("frontend", "index.html")
+    angular_index = os.path.join("frontend", "app", "index.html")
     angular_path = os.path.join(current_app.config['REPO_PATH'], "static", angular_index)
 
     # A hack to conditionally render different index pages.
@@ -17,44 +17,23 @@ def index():
     # Hack will be removed at some point.
     if not os.path.isfile(angular_path):
         return render_template("index.html")
-    return redirect(url_for('main_views.frontend', filename="index.html"))
+    return redirect(url_for('main_views.frontend_index'))
 
 
 ## Hacks to get angular frontend working.  Will be removed at some point.
-@main_views.route('/frontend/<path:filename>')
-def frontend(filename):
+@main_views.route('/app')
+def frontend_index():
     from app import app
-    return app.send_static_file(os.path.join("frontend", filename))
+    return app.send_static_file(os.path.join("frontend", "app", "index.html"))
 
-@main_views.route('/data/widgetList.json')
-def widget_list():
+@main_views.route('/app/<path:filepath>.<string(minlength=2, maxlength=4):extension>')
+def frontend_files(filepath, extension):
+    print "match file {0}".format(filepath)
     from app import app
-    return app.send_static_file(os.path.join("frontend", "data", "widgetList.json"))
+    return app.send_static_file(os.path.join("frontend", "app", "{0}.{1}".format(filepath, extension)))
 
-def send_static_file(*args):
+@main_views.route('/app/<path:filepath>')
+def frontend_routes(filepath):
+    print "match path {0}".format(filepath)
     from app import app
-    return app.send_static_file(os.path.join(*args))
-
-@main_views.route('/widgets/<path:widget_path>')
-def widgets(widget_path):
-    return send_static_file("frontend", "widgets", widget_path)
-
-@main_views.route('/assets/<path:asset_path>')
-def assets(asset_path):
-    return send_static_file("frontend", "assets", asset_path)
-
-@main_views.route('/thirdparty/<path:thirdparty_path>')
-def thirdparty(thirdparty_path):
-    return send_static_file("frontend", "thirdparty", thirdparty_path)
-
-@main_views.route('/lib/<path:lib_path>')
-def lib(lib_path):
-    return send_static_file("frontend", "lib", lib_path)
-
-@main_views.route('/partials/<path:partial_path>')
-def partials(partial_path):
-    return send_static_file("frontend", "partials", partial_path)
-
-@main_views.route('/<string:filename>.js')
-def get_file(filename):
-    return send_static_file("frontend", "{0}.js".format(filename))
+    return app.send_static_file(os.path.join("frontend", "app", "index.html"))
