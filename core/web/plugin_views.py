@@ -23,6 +23,9 @@ log = logging.getLogger(__name__)
 plugin_views = Blueprint('plugin_views', __name__, template_folder=os.path.join(current_app.config['REPO_PATH'], 'templates'))
 api = swagger.docs(Api(plugin_views), api_spec_url=current_app.config['API_SPEC_URL'])
 
+class InvalidViewException(Exception):
+    pass
+
 class BasePluginView(Resource):
     method_decorators = [DEFAULT_SECURITY]
 
@@ -149,13 +152,19 @@ class ScopeViewsList(BasePluginView):
         from core.plugins.loader import plugins
         context, mod = get_context_for_scope(scope, hashkey)
         user_views = []
-        for p in mod.plugins:
-            views = plugins[p.hashkey].views
+        scope_installed = [p.hashkey for p in mod.plugins]
+        for key in plugins:
+            p = plugins[key]
+            views = p.views
             for v in views:
                 context.plugin = p
                 manager = ViewManager(context)
                 data = manager.get_meta(v.hashkey)
                 data['url'] = self.get_url(scope, hashkey, p.hashkey, v.hashkey)
+                data['installed'] = False
+                data['plugin'] = p.hashkey
+                if p.hashkey in scope_installed:
+                    data['installed'] = True
                 user_views.append(data)
 
         return user_views
@@ -198,6 +207,8 @@ class PluginViewsDetail(BasePluginView):
         from app import db
         from core.database.models import PluginView
         view = db.session.query(PluginView).filter_by(hashkey=view_hashkey).first()
+        if view is None:
+            raise InvalidViewException
         return view.plugin
 
     def get_manager(self, scope, hashkey, view_hashkey):
@@ -209,7 +220,10 @@ class PluginViewsDetail(BasePluginView):
 
     def get(self, scope, hashkey, view_hashkey):
         data, resource_key = self.find_get_data()
-        manager = self.get_manager(scope, hashkey, view_hashkey)
+        try:
+            manager = self.get_manager(scope, hashkey, view_hashkey)
+        except InvalidViewException:
+            return {}, 400
         val = manager.call_route_handler(view_hashkey, "get", data, resource_key)
         return val
 

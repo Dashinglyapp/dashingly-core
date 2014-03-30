@@ -1,5 +1,5 @@
 from flask.ext.login import current_user
-from core.database.models import ResourceData, Permission
+from core.database.models import ResourceData, Permission, ResourceLayout
 from core.manager import BaseManager, ExecutionContext
 from core.resources.permissions import ResourcePermissionsManager
 from core.util import get_context_for_scope, IncorrectPermissionsException
@@ -54,6 +54,7 @@ class ResourceManager(BaseManager):
         views = kwargs.pop('views', None)
         permissions = kwargs.pop('permissions', None)
         related = kwargs.pop('related', None)
+        layout = kwargs.pop('layout', None)
         model = ResourceData(
             user=self.user,
             group=self.group,
@@ -61,14 +62,20 @@ class ResourceManager(BaseManager):
             **kwargs
         )
         db.session.add(model)
+
         if views is not None:
             for v in views:
                 view = self.get_view(v)
                 if view is not None:
                     model.views.append(view)
+
         if permissions is not None:
             for p in permissions:
                 model.permissions.append(self.create_permission(p['scope'], p['public'], p['hashkey']))
+
+        if layout is not None:
+            model.layout = ResourceLayout(**layout)
+
         db.session.commit()
         return model
 
@@ -92,6 +99,7 @@ class ResourceManager(BaseManager):
         views = data.pop('views', None)
         permissions = data.pop('permissions', None)
         related = data.pop('related', None)
+        layout = data.pop('layout', None)
         for k in data:
             if k == "settings":
                 try:
@@ -106,20 +114,27 @@ class ResourceManager(BaseManager):
         if views is not None:
             view_objs = []
             for v in views:
-                view_objs.append(self.get_view(v))
+                if v is not None:
+                    view_objs.append(self.get_view(v))
             model.views = view_objs
 
         if permissions is not None:
             perm_objs = []
             for p in permissions:
-                perm_objs.append(self.create_permission(p['scope'], p['public'], p['hashkey']))
+                if p is not None:
+                    perm_objs.append(self.create_permission(p['scope'], p['public'], p['hashkey']))
             model.permissions = perm_objs
 
         if related is not None:
             related_objs = []
             for r in related:
-                related_objs.append(self.get_or_create_model(**r))
+                if r is not None:
+                    related_objs.append(self.get_or_create_model(**r))
             model.related = related_objs
+
+        if layout is not None:
+            for attr in layout:
+                setattr(model.layout, attr, layout[attr])
 
         db.session.commit()
         return model

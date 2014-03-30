@@ -51,7 +51,9 @@ resource_permissions = db.Table('resource_permissions', db.Model.metadata,
 
 resource_related = db.Table("resource_related", db.Model.metadata,
     db.Column("parent_id", db.Integer, db.ForeignKey("resourcedata.id")),
-    db.Column("related_id", db.Integer, db.ForeignKey("resourcedata.id"))
+    db.Column("related_id", db.Integer, db.ForeignKey("resourcedata.id")),
+    db.Column("col", db.Integer),
+    db.Column("row", db.Integer)
 )
 
 resource_views = db.Table("resource_views", db.Model.metadata,
@@ -302,6 +304,16 @@ class Permission(db.Model):
     def __repr__(self):
         return "<Permission(id='%s', version='%s', hashkey='%s')>" % (self.id, self.version, self.hashkey)
 
+class ResourceLayout(db.Model):
+    __tablename__ = "resourcelayout"
+
+    id = db.Column(db.Integer, primary_key=True)
+    resourcedata_id = db.Column(db.Integer, db.ForeignKey('resourcedata.id'))
+    sizeX = db.Column(db.Integer, default=4)
+    sizeY = db.Column(db.Integer, default=2)
+    row = db.Column(db.Integer, default=0)
+    col = db.Column(db.Integer, default=0)
+
 class ResourceData(db.Model):
     __tablename__ = "resourcedata"
     __table_args__ = (db.UniqueConstraint('hashkey'), )
@@ -315,6 +327,8 @@ class ResourceData(db.Model):
     settings = db.Column(JSONEncodedDict)
     author_email = db.Column(db.Text)
     current_view = db.Column(db.String(STRING_MAX))
+
+
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'))
 
@@ -324,6 +338,8 @@ class ResourceData(db.Model):
     user = db.relationship("User", backref=db.backref('resourcedata', order_by=id))
     group = db.relationship("Group", backref=db.backref('resourcedata', order_by=id))
     permissions = db.relationship('Permission', secondary=resource_permissions, backref='resourcedata')
+    layout = db.relationship("ResourceLayout", uselist=False, backref="resourcedata")
+
     related = db.relationship(
         "ResourceData",
         secondary=resource_related,
@@ -384,10 +400,16 @@ def add_hashkey(mapper, connection, target):
     target.hashkey = make_hash([getattr(target, k) for k in target.hash_vals])
 
 def add_user_profile(mapper, connection, target):
-    target.profile = UserProfile()
+    if not hasattr(target, 'profile') or target.profile is None:
+        target.profile = UserProfile()
 
 def add_group_profile(mapper, connection, target):
-    target.profile = GroupProfile()
+    if not hasattr(target, 'profile') or target.profile is None:
+        target.profile = GroupProfile()
+
+def add_resource_layout(mapper, connection, target):
+    if not hasattr(target, 'layout') or target.layout is None:
+        target.layout = ResourceLayout()
 
 # Register hashkey adding events.
 event.listen(PluginData, "before_insert", add_hashkey)
@@ -402,3 +424,6 @@ event.listen(PluginView, "before_insert", add_hashkey)
 # Register profile adding events.
 event.listen(User, "before_insert", add_user_profile)
 event.listen(Group, "before_insert", add_group_profile)
+
+# Add items to resources before saving
+event.listen(ResourceData, "before_insert", add_resource_layout)
