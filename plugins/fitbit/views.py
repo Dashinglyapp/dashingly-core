@@ -1,19 +1,18 @@
 from core.plugins.lib.views.base import View
-from core.plugins.lib.views.charts import ModelChartView
+from core.plugins.lib.views.charts import DailyCountChartView
 from plugins.fitbit.models import StepModel, DistanceModel, TimeInBedModel, MinutesAsleepModel, WeightModel, SleepEfficiencyModel, ActivityCaloriesModel, SleepStartTimeModel, CaloriesInModel, CaloriesModel, WaterModel
 
-class BaseFitbitView(ModelChartView):
+class BaseFitbitView(DailyCountChartView):
     name = None
     model = None
     description = None
     y_label = None
     y_name = None
-    description = 'How many commits you made in github per day.'
     y_data_field = 'value'
     x_data_field = 'date'
     x_label = 'Date'
     x_name = 'Date'
-    x_data_field = 'date'
+    aggregation_method = "last"
 
 class StepView(BaseFitbitView):
     name = "steps"
