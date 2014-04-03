@@ -67,6 +67,11 @@ class DailyCountChartView(ChartView):
     x_name = None
     y_name = None
     x_data_field = None
+    y_data_field = None
+
+    # One of 'average', 'count', 'first', 'last', and 'total'
+    aggregation_method = "average"
+    tags = ["view", "chart", "daily-count-timeseries"]
 
     def get_chart_points(self, data):
         start = data.get('start', None)
@@ -74,15 +79,47 @@ class DailyCountChartView(ChartView):
 
         data = self.manager.query_class_range("date", self.model, start=start, end=end)
 
-        info = {}
+        counts = {}
+        values = {}
+        totals = {}
+
+        last_times = {}
         for d in data:
             tz_date = self.convert_to_local_timezone(getattr(d, self.x_data_field))
             date_obj = tz_date.replace(hour=0, minute=0, second=0, microsecond=0)
             date_str = date_obj.isoformat()
-            if date_str in info:
-                info[date_str] += 1
+            if date_str in counts:
+                counts[date_str] += 1
             else:
-                info[date_str] = 1
+                counts[date_str] = 1
+            if self.aggregation_method in ["last", "first"]:
+                last_time = last_times.get(date_str, None)
+                value = getattr(d, self.y_data_field)
+                updated = False
+                if self.aggregation_method == "last" and last_time is None or last_time < tz_date:
+                    values[date_str] = value
+                    updated = True
+                elif self.aggregation_method == "first" and last_time is None or last_time > tz_date:
+                    values[date_str] = value
+                    updated = True
+                if updated:
+                    last_times[date_str] = tz_date
+            elif self.aggregation_method in ['total', 'average']:
+                value = getattr(d, self.y_data_field)
+                if date_str in totals:
+                    totals[date_str] += value
+                else:
+                    totals[date_str] = value
+
+        info = counts
+        if self.aggregation_method == "average":
+            info = {}
+            for d in totals:
+                info[d] = totals[d] / float(counts[d])
+        elif self.aggregation_method == "total":
+            info = totals
+        elif self.aggregation_method in ["last", "first"]:
+            info = values
 
         x = info.keys()
         x.sort()

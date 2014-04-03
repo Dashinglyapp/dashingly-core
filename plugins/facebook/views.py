@@ -11,3 +11,4 @@ class DailyActivityChart(DailyCountChartView):
     x_name = 'Date'
     y_name = 'Daily activity'
     x_data_field = 'date'
+    aggregation_method = "count"

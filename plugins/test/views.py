@@ -3,7 +3,7 @@ from wtforms.validators import required
 from core.plugins.lib.views.forms import FormView, SettingsFormView
 from core.plugins.lib.proxies import MetricProxy, SourceProxy
 from core.plugins.lib.views.base import View
-from core.plugins.lib.views.charts import ModelChartView
+from core.plugins.lib.views.charts import ModelChartView, DailyCountChartView
 from plugins.test.models import SettingsModel, MoodModel, DataModel
 
 
@@ -32,7 +32,7 @@ class SettingsForm(SettingsFormView):
     model = SettingsModel
     your_name = TextField(description="Enter your name, man!")
 
-class DailyMoodChart(ModelChartView):
+class DailyMoodChart(DailyCountChartView):
     name = 'daily_mood'
     description = 'Your mood every day.'
     model = MoodModel
@@ -42,3 +42,4 @@ class DailyMoodChart(ModelChartView):
     x_label = 'Date'
     x_name = 'Date'
     y_name = 'Mood'
+    aggregation_method = "average"

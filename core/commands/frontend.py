@@ -31,6 +31,6 @@ class SyncJS(Command):
             except Exception, e:
                 print e
         self.run_command("npm install")
-        self.run_command("grunt setup")
+        self.run_command("grunt default")
         self.run_command("rm -rf {0}/*".format(frontend_path))
         self.run_command("cp -a dist/* {0}".format(os.path.abspath(frontend_path)))

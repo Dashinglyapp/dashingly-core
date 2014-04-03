@@ -13,4 +13,4 @@ class DailyCommitChart(DailyCountChartView):
     x_label = 'Date'
     x_name = 'Date'
     y_name = 'Daily commits'
-    x_data_field = 'date'
+    aggregation_method = "count"
