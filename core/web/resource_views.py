@@ -55,6 +55,12 @@ class BaseResourceView(Resource):
                 hashkey=key,
                 scope=p.scope
             ))
+        layout = dict(
+            row=resource.layout.row,
+            col=resource.layout.col,
+            sizeX=resource.layout.sizeX,
+            sizeY=resource.layout.sizeY
+        )
         vals = dict(
             hashkey=resource.hashkey,
             name=resource.name,
@@ -66,6 +72,7 @@ class BaseResourceView(Resource):
             permissions=permissions,
             current_view=resource.current_view,
             parents=[r.hashkey for r in resource.parents],
+            layout=layout
         )
         if find_related:
             related = []
@@ -174,6 +181,24 @@ class TreeResourceView(BaseResourceView):
         return self.convert(scope, hashkey, root, find_related=True)
 
 api.add_resource(TreeResourceView, '/api/v1/<string:scope>/<string:hashkey>/resources/tree')
+
+class LayoutView(BaseResourceView):
+
+    def post(self, scope, hashkey):
+        data = get_data()
+        positions = data.pop('positions', None)
+        if positions is None:
+            return {}, 400
+
+        context, mod = get_context_for_scope(scope, hashkey)
+        row = 0
+        for (i, pos) in enumerate(positions):
+            manager = ResourceManager(context)
+            manager.update_model(pos['hashkey'], dict(layout=pos['layout']))
+            row += self.get_resource(pos['hashkey']).layout.sizeX
+        return {}, 200
+
+api.add_resource(LayoutView, '/api/v1/<string:scope>/<string:hashkey>/resources/layout')
 
 class ResourceDetail(BaseResourceView):
 

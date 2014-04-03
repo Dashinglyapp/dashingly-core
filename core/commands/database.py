@@ -25,6 +25,14 @@ class UpgradeDB(Command):
             # Happens if records already exist.
             db.session.rollback()
 
+class GenerateMigration(Command):
+    option_list = (
+        Option('--message', '-m', dest='message', help="Migration message."),
+    )
+
+    def run(self, message):
+        command.revision(alembic_cfg, message=message, autogenerate=True)
+
 class MakeAdmin(Command):
     option_list = (
         Option('--user', '-u', dest='user', help="User email address."),
@@ -36,3 +44,4 @@ class MakeAdmin(Command):
         role = user_datastore.find_or_create_role('admin')
         user_datastore.add_role_to_user(u, role)
         db.session.commit()
+

@@ -37,3 +37,16 @@ def frontend_routes(filepath):
     print "match path {0}".format(filepath)
     from app import app
     return app.send_static_file(os.path.join("frontend", "app", "index.html"))
+
+## Documentation paths
+
+@main_views.route('/docs/frontend')
+def doc_routes():
+    from app import app
+    return app.send_static_file(os.path.join("frontend", "docs", "frontend", "index.html"))
+
+@main_views.route('/docs/<path:filepath>')
+def doc_file_routes(filepath):
+    print "match path {0}".format(filepath)
+    from app import app
+    return app.send_static_file(os.path.join("frontend", "docs", filepath))
