@@ -74,6 +74,14 @@ OAUTH_CONFIG = {
         'access_token_method': 'POST',
         'access_token_url': 'https://accounts.google.com/o/oauth2/token',
         'authorize_url': 'https://accounts.google.com/o/oauth2/auth'
+    },
+    'foursquare': {
+        'request_token_params': {'access_type': 'offline'},
+        'base_url': 'https://api.foursquare.com/v2/',
+        'request_token_url': None,
+        'access_token_method': 'POST',
+        'access_token_url': 'https://foursquare.com/oauth2/access_token',
+        'authorize_url': 'https://foursquare.com/oauth2/authorize'
     }
 }
 
