@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Realize</title>
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+        <!-- font awesome from BootstrapCDN -->
+        <!--     <link href="http://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+         -->
+        <!-- compiled CSS -->
+            <link rel="stylesheet" type="text/css" href="/app/realize-ui-angular-0.0.2.css" />
+
+
+        <base href="/app/">
+    </head>
+    <body ng-cloak ng-class="{authed:authed}">
+        <div class="container">
+            <div class="root-container"
+                 ng-swipe-left="$root.showleftmenu=0;"
+                 ng-swipe-right="$root.showrightmenu=0;"
+                 ng-click="$root.closeMenus();"
+                    >
+
+                <div class="menus">
+                    <div ng-include="'partials/left-menu.tpl.html'"></div>
+                    <div ng-include="'partials/right-menu.tpl.html'"></div>
+                    <div ng-include="'partials/top-nav.tpl.html'"></div>
+                </div>
+
+                <div ng-controller="WidgetCtrl" class="widgets-frame">
+                    <div class="container">
+                        <widget-container widgetData="widgetData"></widget-container>
+                    </div>
+                </div>
+
+                <ng-view></ng-view>
+
+                <div class="notification-container bottom right">
+                    <div growl></div>
+                </div>
+            </div>
+        </div>
+
+        <script type="text/javascript" src="/app/thirdparty.js"></script>
+
+        <script type="text/javascript" src="/app/realize-ui-angular-0.0.2-require.js"></script>
+
+
+        
+    </body>
+</html>

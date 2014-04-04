@@ -93,7 +93,7 @@ class OauthBase(object):
             oauth_token_secret=resp.get(self.oauth_token_secret_name, None),
             version=self.version,
         )
-        return redirect(url_for("main_views.index"))
+        return redirect('/')
 
     def get_or_create(self, name, **kwargs):
         from core.database.models import Authorization

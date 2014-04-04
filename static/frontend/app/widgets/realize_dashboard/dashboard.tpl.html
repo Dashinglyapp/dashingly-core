@@ -1,0 +1,24 @@
+<div ng-controller="WidgetDashboardCtrl">
+    <h4>Dashboard</h4>
+    <button type="button" class="btn btn-default" ng-click="open()">
+        <span class="fa fa-plus"></span>
+        Add Widget
+    </button>
+	<script type="text/ng-template" id="widgetModal.tpl.html">
+		<div class="modal-header">
+			<h3>Widgets</h3>
+		</div>
+		<div class="modal-body">
+			<plugin-list></plugin-list>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-primary" ng-click="$close()">Done</button>
+		</div>
+	</script>
+
+    <div gridster="gridsterOpts">
+        <div gridster-item="itemMap" ng-repeat="widgetData in loadedWidgets">
+            <widget-container widgetData="widgetData"></widget-container>
+        </div>
+    </div>
+</div>

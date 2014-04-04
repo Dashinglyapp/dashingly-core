@@ -7,8 +7,9 @@ celerybeat-schedule
 realize/private.py
 .vagrant
 .coverage
-static/frontend/*
+static/frontend/docs/*
 !.vc
 docs/_build
 src/*
 build/*
+realize-ui-angular/
