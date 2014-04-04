@@ -1,0 +1,58 @@
+<div class="menuleft"
+			ng-class="{active:$root.showleftmenu}"
+			ng-click="$event.stopPropagation();" ng-controller="LeftMenuCtrl">
+
+
+	<div class="content-container" ng-class='{active:shownItem}'>
+		<ul class="nav nav-pils nav-stacked" ng-if="authed">
+			<li ng-click="showItem('settings')">
+				<a class="fa fa-angle-right"></a>
+				<a>Settings</a>
+			</li>
+			<li ng-click="showItem('authorizations')">
+				<a class="fa fa-angle-right"></a>
+				<a>Authorizations</a>
+			</li>
+			<li ng-click="showItem('contact')">
+				<a class="fa fa-angle-right"></a>
+				<a>Contact Us</a>
+			</li>
+            <li ng-click="showItem('developers')">
+				<a class="fa fa-angle-right"></a>
+				<a>Developers</a>
+			</li>
+            <li ng-click="logout();">
+				<a>Log Out</a>
+			</li>
+		</ul>
+		<div class="left-menu-content">
+			<button class="btn btn-link" ng-click="shownItem=''">
+				<span class="fa fa-angle-left"></span>
+				<span>Back</span>
+			</button>
+			<div class="leftmenuitembody settings" ng-class="{active:shownItem==='settings'}">
+				<form class="app-settings">
+					<label for="timezone">Time Zone</label>
+					<input name="timezone" type="text" placeholder="Time Zone"></input>
+				</form>
+			</div>
+			<div class="leftmenuitembody developers" ng-class="{active:shownItem==='developers'}">
+				<p>Want to customize Realize?  Check us out on <a href="http://www.github.com/realizeapp/realize-core">Github</a>!</p>
+			</div>
+			<div class="leftmenuitembody authorizations" ng-class="{active:shownItem==='authorizations'}">
+               <ul class="authorization-list">
+                    <li ng-repeat="auth in authorizationList">
+                      <a ng-click="authRedirect(auth)"><span ng-class="(auth.active==true) ? 'fa fa-minus' : 'fa fa-plus'"></span> {{auth.name | capitalize}}</a>
+                    </li>
+               </ul>
+			</div>
+			<div class="leftmenuitembody contact" ng-class="{active:shownItem==='contact'}">
+                <p>Have idea, suggestions, comments? Give us feedback and vote on suggested features with <a href="realize.uservoice.com">Uservoice</a>.</p>
+				<p>Have a question or want to reach us directly?  Email us at <a href="mailto:hello@realize.pe" target="_top">hello@realize.pe</a>.</p>
+			</div>
+			<div class="leftmenuitembody feedback" ng-class="{active:shownItem==='feedback'}">
+
+			</div>
+		</div>
+	</div>
+</div>

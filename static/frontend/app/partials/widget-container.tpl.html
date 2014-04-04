@@ -1,0 +1,38 @@
+<div class="widget" ng-class="(widgetData.name.substring(0, 8) === 'realize_') ? '' : 'widget-border'">
+	<div class="widget-heading auth" ng-controller="WidgetActionsCtrl">
+		<div class="widget-actions" ng-show="widgetData.settings !== undefined">
+			<div ng-show="widgetData.display !== undefined && widgetData.display.views !== undefined" class="widget-action dropdown">
+				<a class="btn btn-default dropdown-toggle">
+					<span class="fa fa-caret-down"></span>
+				</a>
+				<ul class="dropdown-menu">
+					<li ng-repeat="(key, value) in widgetData.display.views">
+						<a ng-click="changeView(key)">{{key}}</a>
+					</li>
+				</ul>
+			</div>
+
+			<div class="widget-action">
+				  <a class="btn btn-default" ng-click="refreshWidget()"><span class="fa fa-refresh" ></span> </a>
+			</div>
+
+			<div class="widget-action">
+					<a class="btn btn-default" ng-click="showSettings()"><span class="fa fa-gear" ></span> </a>
+			</div>
+
+			<div class="widget-action">
+					<a class="btn btn-default" ng-click="deleteWidget()"><span class="fa fa-trash-o" ></span> </a>
+			</div>
+		</div>
+
+		<div collapse="collapseSettings">
+			<formly-form result="formData" fields="fields" options="formOptions" ng-submit="save()">
+			</formly-form>
+		</div>
+
+	</div>
+	<div class="widget-body widget-content">
+        <span us-spinner ng-if="widgetData === undefined"></span>
+		<ng-include src="widgetData.template" widgetData="{{widgetData}}"></ng-include>
+	</div>
+</div>

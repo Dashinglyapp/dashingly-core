@@ -21,18 +21,20 @@ vagrant up
 
 This should take 15-20 minutes to download and install dependencies on newer machines.
 
-Once everything finishes, visiting `127.0.0.1:5000` in your browser will show a simple index page.  Please see the [documentation](http://realize-core.readthedocs.org/) for more information.
+Once everything finishes, visiting `127.0.0.1:5000` in your browser will show Realize.  Please see the [documentation](http://realize-core.readthedocs.org/) for more information.
 
 Full UI
 ---------------------------------------------
 
-The full UI is in the `realize-ui-angular` repo.  In order to get it:
+The full UI is in the `realize-ui-angular` repo.  A built version of the UI is included in this repo.  In order to update the UI:
 
 ```sh
-git clone https://github.com/realizeapp/realize-ui-angular.git
 cd realize-core
-python manage.py syncjs -p PATH_TO_REALIZE_ANGULAR_DIR
+git clone https://github.com/realizeapp/realize-ui-angular.git
+python manage.py syncjs -p realize-ui-angular/
 ```
+
+You may need to use sudo for the last command if you get errors about grunt not being found.
 
 Visiting `127.0.0.1:5000` will now show you the realize UI instead of the index page.
 

@@ -1,0 +1,59 @@
+<div class="top-nav" ng-controller="TopNavCtrl">
+	<nav class="navbar navbar-default" role="navigation">
+
+		<div class="container">
+				<!-- If User Authed -->
+				<ul class="nav navbar-nav" ng-if="authed">
+					<li class="navbar-link">
+						<a ng-click="$root.showleftmenu=!$root.showleftmenu;$event.stopPropagation();"
+								class="nav-toggle-left navbar-brand">
+                            <span class="fa fa-bars"></span>
+                            Realize
+						</a>
+					</li>
+					<li class="dashboard-dropdown dropdown" ng-controller="DashboardsCtrl">
+						<a class="dropdown-toggle">
+							<span class="fa fa-dashboard"></span>
+							<span class="navbar-link">Dashboards</span>
+						</a>
+						<ul class="dropdown-menu">
+              <li ng-repeat="dash in dashboards" ng-click="switchDashboard(dash.name)">
+								<a class="navbar-link">
+									<span class="dashboard-select-title">{{dash.name | capitalize}}</span>
+								</a>
+							</li>
+						</ul>
+					</li>
+					<li class="realize-market navbar-link nav-toggle-right"
+							ng-click="$root.showrightmenu=!$root.showrightmenu;$event.stopPropagation();">
+						<a class="fa fa-gear"><span class="hidden-xs navbar-link">Market</span></a>
+					</li>
+				</ul>
+
+
+				<!-- If !authed -->
+				<ul class="nav navbar-nav" ng-if="!authed">
+					<li class="navbar-link">
+						<a href="/" class="navbar-brand">
+                            Realize
+						</a>
+					</li>
+					<li class="nav-register" ng-click="register()">
+						<a class="navbar-link"><span class="fa fa-user"></span> <span class="hidden-xs">Sign Up</span></a>
+					</li>
+					<li class="nav-login" ng-click="login()">
+						<a class="navbar-link"><span class="fa fa-sign-in"></span> <span class="hidden-xs">Log In</span></a>
+					</li>
+					<li class="nav-about" ng-click="about()">
+						<a class="navbar-link"><span class="fa fa-question-circle"></span> <span class="hidden-xs">About</span></a>
+					</li>
+                    <li class="nav-about">
+						<a class="navbar-link" href="http://www.github.com/realizeapp/realize-core" target="_blank"><span class="fa fa-flask"></span> <span class="hidden-xs">Developers</span></a>
+					</li>
+				</ul>
+
+		</div>
+
+
+	</nav>
+</div>

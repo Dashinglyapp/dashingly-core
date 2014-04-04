@@ -1,0 +1,30 @@
+<div ng-controller="LoginCtrl">
+    <h2>Login to Realize</h2>
+
+    <form>
+
+        <p class="form-group">
+
+        <p class="help-block" ng-repeat="e in emailError">{{e}}</p>
+        <label>Email
+            <input type='email' ng-model="data.email">
+        </label>
+        </p>
+        <p class="form-group">
+
+        <p class="help-block" ng-repeat="p in passwordError">{{p}}</p>
+        <label>Password
+            <input type='password' ng-model="data.password">
+        </label>
+        </p>
+
+        <button
+                class="btn btn-success btn-lg"
+                type="submit"
+                ng-click="login()"
+                >
+            Login
+        </button>
+
+    </form>
+</div>

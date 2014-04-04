@@ -1,0 +1,22 @@
+<div class="plugin-list-item">
+    <div class="plugin-heading">
+        <div class="btn-group plugin-actions">
+            <a class="plugin-add btn btn-default" ng-if="type === 'plugins'" ng-click="(item.installed==true) ? remove(item) : add(item)"><span ng-class="(item.installed==true) ? 'fa fa-minus' : 'fa fa-plus'"> {{(item.installed==true) ? 'Remove' : 'Add'}}</span></a>
+             <a class="widget-add btn btn-default" ng-if="type === 'widgets'" ng-click="add(item)"><span class="fa fa-plus"> Add</span></a>
+            <a class="plugin-info btn btn-default" ng-click="info(item)"><span class="fa fa-question-circle"></span> More Info</a>
+        </div>
+        <h4 ng-if="type === 'plugins'">{{item.name | capitalize}}</h4>
+        <h4 ng-if="type === 'widgets'">{{item.title}}</h4>
+        <p>{{item.description}}</p>
+    </div>
+    <div class="plugin-body">
+        <div class="required" ng-if="item.deps.required.length > 0">
+            <div class="dependency">
+                <h5>Requires</h5>
+            </div>
+           <div ng-repeat="req in item.deps.required" class="dependency">
+               {{req}}
+           </div>
+       </div>
+    </div>
+</div>

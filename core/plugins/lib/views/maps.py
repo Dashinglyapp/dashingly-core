@@ -46,8 +46,8 @@ class SimpleMapView(MapView):
         for d in data:
             map_points.append(
                 MapDescriptor(
-                    getattr(d, self.lat_field, None),
                     getattr(d, self.lon_field, None),
+                    getattr(d, self.lat_field, None),
                     getattr(d, self.date_field, None)
                 )
             )

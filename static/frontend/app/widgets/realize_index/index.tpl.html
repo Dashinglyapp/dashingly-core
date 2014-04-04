@@ -1,0 +1,96 @@
+<div ng-controller="IndexCtrl">
+	<div class="jumbotron">
+		<h1>Welcome to a new kind of home for your data.</h1>
+
+		<p class="lead">Realize is the health tracking tool we have all been waiting for.</p>
+
+		<form>
+			<p class="form-group">
+
+			<p class="help-block" ng-repeat="e in emailError">{{e}}</p>
+			<label>Email
+				<input type='email' ng-model="data.email">
+			</label>
+			</p>
+			<p class="form-group">
+
+			<p class="help-block" ng-repeat="p in passwordError">{{p}}</p>
+			<label>Password
+				<input type='password' ng-model="data.password">
+			</label>
+			</p>
+
+			<div class="btn-group">
+				<button
+						class="btn btn-success btn-lg"
+						type="submit"
+						ng-click="register()"
+						>
+					Sign up now!
+				</button>
+			</div>
+		</form>
+	</div>
+
+	<div class="row marketing">
+		<div class="col-lg-6">
+            <div class="feature">
+                <div class="feature-icon">
+                    <span class="fa fa-bar-chart-o"></span>
+                </div>
+                <h3 class="heading">Get all of your data in one place</h3>
+
+                <p>The data we track is scattered across dozens of different tools right now. Realize lets you unify your
+                    data in one secure place.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <span class="fa fa-flask"></span>
+                </div>
+                <h3 class="heading">Set goals and run experiments</h3>
+
+                <p>Want to figure out if using facebook less will improve your mood? Realize can leverage cross-platform
+                    data to make it happen.</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">
+                    <span class="fa fa-medkit"></span>
+                </div>
+                <h3 class="heading">Monitor your health</h3>
+
+                <p>Track your health over time using our analysis tools.</p>
+            </div>
+		</div>
+
+		<div class="col-lg-6">
+            <div class="feature">
+                <div class="feature-icon">
+                    <span class="fa fa-adjust"></span>
+                </div>
+                <h3 class="heading">Extend what it can do</h3>
+
+                <p>Realize is completely extensible. Want to add a new type of analysis? Go ahead and do it.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">
+                    <span class="fa fa-laptop"></span>
+                </div>
+                <h3 class="heading">Run it on your own server</h3>
+
+                <p>Realize is open source, so you can just go ahead and run it on your own server.  Get started <a
+					href="https://github.com/realizeapp/realize-core">here.</a></p>
+            </div>
+             <div class="feature">
+                <div class="feature-icon">
+                    <span class="fa fa-phone"></span>
+                </div>
+                <h3 class="heading">Make mobile health apps more easily</h3>
+
+                <p>Let Realize take care of the backend and API integrations, and just focus on building your app. <a
+					href="mailto:hello@realize.pe" target="_top">Contact us to learn more!</a></p>
+            </div>
+		</div>
+	</div>
+</div>
