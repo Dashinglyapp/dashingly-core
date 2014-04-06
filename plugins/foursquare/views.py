@@ -4,7 +4,7 @@ from plugins.foursquare.models import Checkins
 
 class CheckinMap(SimpleMapView):
     name = 'foursquare_checkins'
-    description = 'Checkins in foursquare.'
+    description = 'Movement'
     model = Checkins
     lat_field = "latitude"
     lon_field = "longitude"

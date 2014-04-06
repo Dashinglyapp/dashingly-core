@@ -4,7 +4,7 @@ from plugins.facebook.models import NewsFeed
 
 class DailyActivityChart(DailyCountChartView):
     name = 'daily_activity'
-    description = 'How much activity you have per day on facebook.'
+    description = 'Socialization'
     y_label = 'Activity'
     model = NewsFeed
     x_label = 'Date'

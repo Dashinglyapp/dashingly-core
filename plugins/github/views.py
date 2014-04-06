@@ -5,7 +5,7 @@ from plugins.github.models import GithubCommits
 
 class DailyCommitChart(DailyCountChartView):
     name = 'daily_commits'
-    description = 'How many commits you made in github per day.'
+    description = 'Productivity'
     model = GithubCommits
     y_data_field = 'data'
     x_data_field = 'date'

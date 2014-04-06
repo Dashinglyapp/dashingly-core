@@ -61,8 +61,6 @@ class ViewManager(BaseManager):
         return permissions.check_perms(view, self.perm_types[method], resource_hashkey)
 
     def handle_route(self, hashkey, method, data, resource_hashkey):
-        if not self.check_permissions(hashkey, method, resource_hashkey):
-            raise NotAuthorizedException()
         view_cls = self.get_view_cls(hashkey)
         manager = self.get_manager_from_context()
         view = view_cls()

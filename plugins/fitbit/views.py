@@ -38,14 +38,14 @@ class TimeInBedView(BaseFitbitView):
 class MinutesAsleepView(BaseFitbitView):
     name = "minutes_asleep"
     model = MinutesAsleepModel
-    description = "Minutes asleep per day."
+    description = "Sleep"
     y_label = "Minutes"
     y_name = "Minutes asleep"
 
 class CaloriesView(BaseFitbitView):
     name = "calories"
     model = CaloriesModel
-    description = "Calories burned per day."
+    description = "Exercise"
     y_label = "Calories"
     y_name = "Calories"
 
