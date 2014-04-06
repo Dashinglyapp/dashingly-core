@@ -27,6 +27,10 @@ class EHRView(View):
 
     def get_ehr_data(self, data):
         name = data.get('name', 'bob')
+        if self.manager.user.email == "vik@equirio.com":
+            name = "bob"
+        elif self.manager.user.email == "rex@gmail.com":
+            name = "rex"
         file_path = os.path.abspath(os.path.join(DATA_PATH, "{0}.xml".format(name)))
 
         f = open(file_path, "r")

@@ -64,7 +64,6 @@ def run_delayed_plugin(plugin_hashkey, user_id=None, group_id=None, interval=Non
 @celery.task(base=SqlAlchemyTask)
 def run_delayed_task(plugin_hashkey, task_proxy, user_id=None, group_id=None):
     manager, wrapper = get_manager(plugin_hashkey, user_id, group_id)
-
     tasks = wrapper.plugin.tasks
     for task in tasks:
         if task.task_proxy.name == task_proxy.name:
